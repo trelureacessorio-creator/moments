@@ -4,6 +4,7 @@ import { ZodError } from "zod";
 import { authRoutes } from "./auth/routes";
 import { syncRoutes } from "./sync/routes";
 import { sharingRoutes } from "./sharing/routes";
+import { aiRoutes } from "./ai/routes";
 import { devRoutes } from "./dev/routes";
 import { env } from "./env";
 
@@ -26,6 +27,7 @@ export function buildServer(): FastifyInstance {
   app.register(authRoutes);
   app.register(syncRoutes);
   app.register(sharingRoutes);
+  app.register(aiRoutes);
   if (env.NODE_ENV !== "production") app.register(devRoutes);
 
   return app;

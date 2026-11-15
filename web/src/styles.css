@@ -139,3 +139,25 @@ nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: va
 
 /* banner de erro de sincronização */
 .sync-err { background: var(--crit-soft); color: var(--crit); font-size: 12.5px; text-align: center; padding: 7px 12px; }
+
+/* conversar (chat) */
+.chat { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+.msg { max-width: 85%; padding: 10px 13px; border-radius: 16px; font-size: 14px; line-height: 1.45; white-space: pre-wrap; }
+.msg.me { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 5px; }
+.msg.bot { align-self: flex-start; background: var(--surface); border: 1px solid var(--line); border-bottom-left-radius: 5px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.chip { border: 1px solid var(--line); background: var(--surface); color: var(--muted); font-size: 12.5px; padding: 7px 12px; border-radius: 999px; }
+.chip:hover { border-color: var(--accent); color: var(--accent); }
+.sugg { margin-top: 12px; border: 1px solid var(--accent); background: color-mix(in srgb, var(--accent-soft) 55%, var(--surface)); border-radius: var(--r-sm); padding: 12px; }
+.sugg .s-top { font-size: 11.5px; color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.sugg .s-title { font-weight: 600; font-size: 15px; margin: 6px 0 2px; }
+.sugg-actions { display: flex; gap: 8px; margin-top: 11px; }
+.sugg-actions button { flex: 1; border: none; border-radius: 10px; font-weight: 600; font-size: 13.5px; padding: 9px; }
+.sugg-actions .ok { background: var(--accent); color: #fff; }
+.sugg-actions .no { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+.flash { background: var(--good-soft); color: var(--good); font-size: 13px; padding: 9px 12px; border-radius: 10px; margin-top: 10px; text-align: center; }
+.composer { display: flex; gap: 9px; margin-top: 14px; position: sticky; bottom: 0; }
+.composer input { flex: 1; min-width: 0; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 12px; padding: 12px 13px; font-size: 15px; outline: none; }
+.composer input:focus { border-color: var(--accent); }
+.composer button { border: none; background: var(--accent); color: #fff; border-radius: 12px; font-weight: 600; font-size: 14px; padding: 0 16px; }
+.composer button:disabled { opacity: .5; }

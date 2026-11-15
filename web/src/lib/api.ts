@@ -134,4 +134,10 @@ export const api = {
   activity() {
     return request<{ activity: any[] }>("/shares/activity");
   },
+  aiMessage(text: string) {
+    return request<{ reply: string; suggestion?: any }>("/ai/message", {
+      method: "POST",
+      body: JSON.stringify({ text }),
+    });
+  },
 };

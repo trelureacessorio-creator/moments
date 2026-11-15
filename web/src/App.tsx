@@ -4,13 +4,15 @@ import { Auth } from "./screens/Auth";
 import { MeuDia } from "./screens/MeuDia";
 import { Tarefas } from "./screens/Tarefas";
 import { Calendario } from "./screens/Calendario";
+import { Conversar } from "./screens/Conversar";
 import { Notificacoes } from "./screens/Notificacoes";
 
-type Tab = "meudia" | "calendario" | "tarefas" | "notificacoes";
+type Tab = "meudia" | "calendario" | "conversar" | "tarefas" | "notificacoes";
 
 const NAV: { id: Tab; ic: string; label: string }[] = [
   { id: "meudia", ic: "◉", label: "Meu Dia" },
   { id: "calendario", ic: "▦", label: "Calendário" },
+  { id: "conversar", ic: "✦", label: "Conversar" },
   { id: "tarefas", ic: "✓", label: "Tarefas" },
   { id: "notificacoes", ic: "◔", label: "Avisos" },
 ];
@@ -39,6 +41,7 @@ export function App() {
       <main>
         {tab === "meudia" && <MeuDia />}
         {tab === "calendario" && <Calendario />}
+        {tab === "conversar" && <Conversar />}
         {tab === "tarefas" && <Tarefas />}
         {tab === "notificacoes" && <Notificacoes />}
       </main>
