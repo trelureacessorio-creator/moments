@@ -31,19 +31,35 @@ qual as fases seguintes (IA, notificações, telas) são construídas.
 cp .env.example .env            # ajuste os segredos
 npm install
 docker compose up -d db         # PostgreSQL em localhost:5433
-npm run db:push                 # cria o schema no banco
+npm run migrate:deploy          # aplica as migrações versionadas
 npm run seed                    # (opcional) dados de exemplo
 npm run dev                     # API em http://localhost:3000
 ```
 
+### Migrações
+
+O schema é versionado em `prisma/migrations/` (migrações reproduzíveis, próprias para
+produção). Comandos:
+
+```bash
+npm run migrate:deploy   # aplica as migrações pendentes (CI e produção)
+npm run migrate          # cria uma nova migração a partir de mudanças no schema (dev)
+npm run migrate:status   # mostra o estado das migrações
+```
+
 > Em produção, defina `JWT_ACCESS_SECRET` e `JWT_REFRESH_SECRET` com valores longos e
-> aleatórios e use migrações versionadas (`npm run migrate`).
+> aleatórios. Use `migrate:deploy` (não `db:push`) para aplicar o schema.
+
+### Integração contínua
+
+`.github/workflows/ci.yml` roda a cada push/PR na `main`: aplica as migrações e executa
+os testes do backend (com um PostgreSQL de serviço) e faz typecheck + build do app web.
 
 ## Testes
 
 ```bash
 docker compose up -d db
-npm run db:push
+npm run migrate:deploy
 npm test
 ```
 
