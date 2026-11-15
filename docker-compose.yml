@@ -1,0 +1,21 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: moments-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: moments
+      POSTGRES_PASSWORD: moments
+      POSTGRES_DB: moments
+    ports:
+      - "5433:5432"
+    volumes:
+      - moments_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U moments -d moments"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  moments_pg:

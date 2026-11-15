@@ -1,0 +1,138 @@
+import type { FastifyInstance } from "fastify";
+import { z } from "zod";
+import { prisma } from "../db";
+import { hashPassword, verifyPassword } from "./password";
+import { requireAuth, userId } from "./guard";
+import {
+  signAccessToken,
+  newRefreshSecret,
+  hashRefreshSecret,
+  composeRefreshToken,
+  parseRefreshToken,
+  refreshExpiry,
+} from "./tokens";
+
+const registerSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(1).max(120),
+  password: z.string().min(8).max(200),
+  deviceName: z.string().max(120).optional(),
+});
+
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+  deviceName: z.string().max(120).optional(),
+});
+
+function publicUser(u: { id: string; email: string; name: string; status: string }) {
+  return { id: u.id, email: u.email, name: u.name, status: u.status };
+}
+
+async function createSession(uid: string, deviceName?: string, userAgent?: string) {
+  const secret = newRefreshSecret();
+  const session = await prisma.session.create({
+    data: {
+      userId: uid,
+      refreshHash: hashRefreshSecret(secret),
+      deviceName: deviceName ?? null,
+      userAgent: userAgent ?? null,
+      expiresAt: refreshExpiry(),
+    },
+  });
+  return {
+    accessToken: signAccessToken(uid),
+    refreshToken: composeRefreshToken(session.id, secret),
+  };
+}
+
+export async function authRoutes(app: FastifyInstance) {
+  app.post("/auth/register", async (req, reply) => {
+    const body = registerSchema.parse(req.body);
+    const email = body.email.toLowerCase();
+    const exists = await prisma.user.findUnique({ where: { email } });
+    if (exists) return reply.code(409).send({ error: "email_in_use" });
+
+    const user = await prisma.user.create({
+      data: { email, name: body.name, passwordHash: await hashPassword(body.password) },
+    });
+    const tokens = await createSession(user.id, body.deviceName, req.headers["user-agent"]);
+    return reply.code(201).send({ user: publicUser(user), ...tokens });
+  });
+
+  app.post("/auth/login", async (req, reply) => {
+    const body = loginSchema.parse(req.body);
+    const email = body.email.toLowerCase();
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user || !(await verifyPassword(body.password, user.passwordHash))) {
+      return reply.code(401).send({ error: "invalid_credentials" });
+    }
+    if (user.status === "blocked") return reply.code(403).send({ error: "account_blocked" });
+    const tokens = await createSession(user.id, body.deviceName, req.headers["user-agent"]);
+    return reply.send({ user: publicUser(user), ...tokens });
+  });
+
+  app.post("/auth/refresh", async (req, reply) => {
+    const { refreshToken } = z.object({ refreshToken: z.string() }).parse(req.body);
+    const parsed = parseRefreshToken(refreshToken);
+    if (!parsed) return reply.code(401).send({ error: "invalid_token" });
+
+    const session = await prisma.session.findUnique({ where: { id: parsed.sessionId } });
+    if (
+      !session ||
+      session.revokedAt ||
+      session.expiresAt < new Date() ||
+      session.refreshHash !== hashRefreshSecret(parsed.secret)
+    ) {
+      return reply.code(401).send({ error: "invalid_token" });
+    }
+
+    // Rotação do refresh: novo segredo a cada uso.
+    const secret = newRefreshSecret();
+    await prisma.session.update({
+      where: { id: session.id },
+      data: { refreshHash: hashRefreshSecret(secret), lastUsedAt: new Date() },
+    });
+    return reply.send({
+      accessToken: signAccessToken(session.userId),
+      refreshToken: composeRefreshToken(session.id, secret),
+    });
+  });
+
+  app.post("/auth/logout", async (req, reply) => {
+    const { refreshToken } = z.object({ refreshToken: z.string() }).parse(req.body);
+    const parsed = parseRefreshToken(refreshToken);
+    if (parsed) {
+      await prisma.session.updateMany({
+        where: { id: parsed.sessionId, revokedAt: null },
+        data: { revokedAt: new Date() },
+      });
+    }
+    return reply.send({ ok: true });
+  });
+
+  app.get("/auth/me", { preHandler: requireAuth }, async (req, reply) => {
+    const user = await prisma.user.findUnique({ where: { id: userId(req) } });
+    if (!user) return reply.code(404).send({ error: "not_found" });
+    return reply.send({ user: publicUser(user) });
+  });
+
+  app.get("/auth/sessions", { preHandler: requireAuth }, async (req, reply) => {
+    const sessions = await prisma.session.findMany({
+      where: { userId: userId(req), revokedAt: null, expiresAt: { gt: new Date() } },
+      orderBy: { lastUsedAt: "desc" },
+      select: { id: true, deviceName: true, userAgent: true, createdAt: true, lastUsedAt: true },
+    });
+    return reply.send({ sessions });
+  });
+
+  // Encerrar a sessão de um dispositivo (ex.: celular perdido).
+  app.delete("/auth/sessions/:id", { preHandler: requireAuth }, async (req, reply) => {
+    const { id } = z.object({ id: z.string() }).parse(req.params);
+    await prisma.session.updateMany({
+      where: { id, userId: userId(req), revokedAt: null },
+      data: { revokedAt: new Date() },
+    });
+    return reply.send({ ok: true });
+  });
+}
