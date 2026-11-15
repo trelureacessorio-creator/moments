@@ -33,6 +33,7 @@ export function App() {
             <button className="chip-btn" onClick={() => doLogout()}>Sair</button>
           </div>
         </div>
+        {s.error && <div className="sync-err">Não foi possível sincronizar agora. Suas mudanças ficam salvas e tentaremos de novo.</div>}
       </header>
 
       <main>

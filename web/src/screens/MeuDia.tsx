@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useStore, list, createRecord, updateRecord } from "../lib/store";
+import { ApptEditor } from "../components/ApptEditor";
 import { isoToday, fmtLong, TODAY, cap, iso, addDays } from "../lib/dates";
 
 export function MeuDia() {
   const s = useStore();
   const [taskText, setTaskText] = useState("");
   const [busy, setBusy] = useState(false);
+  const [editing, setEditing] = useState<any | null>(null);
 
   const today = isoToday();
   const appts = list(s.data, "appointments")
@@ -67,9 +69,9 @@ export function MeuDia() {
             appts.map((a) => (
               <div className={"row" + (a.status === "done" ? " done" : "")} key={a.id}>
                 <span className="time">{a.time}</span>
-                <div className="r-main">
+                <div className="r-main clickable" onClick={() => setEditing(a)}>
                   <div className="r-title">{a.title}</div>
-                  {a.place && <div className="r-sub">{a.place}</div>}
+                  <div className="r-sub">{a.place ? a.place + " · " : ""}toque para editar</div>
                 </div>
                 <button
                   className={"check" + (a.status === "done" ? " on" : "")}
@@ -112,6 +114,8 @@ export function MeuDia() {
           <div className="tile"><div className="t-num">{apptsWeek}</div><div className="t-lab">compromissos na semana</div></div>
         </div>
       </section>
+
+      {editing && <ApptEditor appt={editing} onClose={() => setEditing(null)} />}
     </>
   );
 }

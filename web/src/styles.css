@@ -122,3 +122,20 @@ nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: va
 
 .loading { display: grid; place-items: center; min-height: 100%; color: var(--muted); font-size: 14px; }
 .syncdot { font-size: 11px; color: var(--faint); }
+
+/* folha de edição (modal) */
+.overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, .4); display: flex; align-items: flex-end; justify-content: center; z-index: 40; }
+.sheet { background: var(--surface); width: 100%; max-width: 560px; border-radius: 18px 18px 0 0; padding: 18px 16px 24px; box-shadow: var(--shadow); max-height: 92vh; overflow: auto; }
+.sheet-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+.sheet-head h3 { font-family: var(--display); font-size: 18px; font-weight: 600; }
+.row2 { display: flex; gap: 10px; }
+.row2 .field { flex: 1; min-width: 0; }
+.sheet textarea { border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 11px; padding: 11px; font-size: 14px; outline: none; resize: vertical; min-height: 70px; }
+.sheet textarea:focus { border-color: var(--accent); }
+.sheet-actions { display: flex; gap: 10px; margin-top: 8px; }
+.sheet-actions .btn { flex: 1; }
+.sheet-actions .btn.ghost { color: var(--crit); border-color: var(--crit); }
+.clickable { cursor: pointer; }
+
+/* banner de erro de sincronização */
+.sync-err { background: var(--crit-soft); color: var(--crit); font-size: 12.5px; text-align: center; padding: 7px 12px; }
