@@ -140,4 +140,10 @@ export const api = {
       body: JSON.stringify({ text }),
     });
   },
+  analyzeDiary(text: string) {
+    return request<{ title: string; summary: string; mood: string; suggestion?: any }>("/ai/diary/analyze", {
+      method: "POST",
+      body: JSON.stringify({ text }),
+    });
+  },
 };

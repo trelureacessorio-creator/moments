@@ -44,7 +44,7 @@ function cap(s: string) { return s.charAt(0).toUpperCase() + s.slice(1); }
 // ---------- interpretação de intenção de criação ----------
 function cleanTitle(t: string) {
   // Evita \b junto a letras acentuadas (JS trata acento como não-palavra): usa espaços.
-  let s = " " + t.trim() + " ";
+  let s = " " + t.trim().replace(/[.!?]+$/, "") + " ";
   s = s.replace(/^\s*(eu\s+)?(marque|marca|marcar|agende|agenda|agendar|anote|anota|anotar|crie|cria|criar|adicione|adiciona|adicionar|lembre|lembra|lembrar|tenho|preciso|quero|vou|tive)(\s+de)?\s+/i, " ");
   s = s.replace(/\s(uma\s+)?(ideia|idéia)[:\s]+/i, " ");
   s = s.replace(/\s\d{1,2}\s*[:h]\s*\d{2}(\s|$)/g, " ");
@@ -89,6 +89,46 @@ function parseSuggestion(text: string, today: string): Suggestion | null {
   if (isAppt || time) return { collection: "appointments", kind: "compromisso", label: `Novo compromisso: ${title} (${relDate(date, today)}${time ? " às " + time : ""})`, fields: { title, date, time: time || "09:00", status: "scheduled" } };
   if (wantsCreate) return { collection: "tasks", kind: "tarefa", label: `Nova tarefa: ${title}`, fields: { text: title, done: false, date: today } };
   return null;
+}
+
+// ---------- diário inteligente: título, resumo e sentimento ----------
+const MOOD_RULES: [RegExp, string][] = [
+  [/grat[oa]|agradec|aben[çc]oad/i, "Gratidão"],
+  [/feliz|alegr|ótim|otim|maravilh|radiante|content|divertid|empolgad/i, "Alegria"],
+  [/cansad|exaust|esgotad|sem energia|sem f[oô]lego/i, "Cansaço"],
+  [/ansios|preocupad|nervos|estress|tens[ãa]|apreensiv|aflit/i, "Ansiedade"],
+  [/trist|chatead|desanim|sozinh|chor|magoad|frustrad|abatid/i, "Tristeza"],
+  [/calm|tranquil|\bpaz\b|seren|aliviad|relax/i, "Tranquilidade"],
+];
+
+export function detectMood(text: string): string {
+  for (const [re, label] of MOOD_RULES) if (re.test(text)) return label;
+  return "Neutro";
+}
+
+export function analyzeDiary(text: string): { title: string; summary: string; mood: string } {
+  const clean = text.replace(/\s+/g, " ").trim();
+  const first = clean.split(/(?<=[.!?])\s/)[0] || clean;
+  let title = first.replace(/[.!?]+$/, "");
+  if (title.length > 44) title = title.slice(0, 44).replace(/\s+\S*$/, "") + "…";
+  title = cap(title) || "Meu relato";
+  const summary = clean.length > 150 ? clean.slice(0, 147).replace(/\s+\S*$/, "") + "…" : clean;
+  return { title, summary, mood: detectMood(clean) };
+}
+
+export async function analyzeDiaryFull(userId: string, text: string, now: Date = new Date()) {
+  const pref = await prisma.preference.findUnique({ where: { ownerId: userId } });
+  const tz = pref?.timezone || "America/Sao_Paulo";
+  const { date: today } = localParts(now, tz);
+  const base = analyzeDiary(text);
+  // Extrai a sugestão da FRASE que contém o gatilho (não do relato inteiro),
+  // para o título ficar limpo (ex.: "Consulta no dentista").
+  let suggestion;
+  for (const sent of text.split(/(?<=[.!?])\s+/)) {
+    const s = parseSuggestion(sent, today);
+    if (s) { suggestion = s; break; }
+  }
+  return { ...base, suggestion };
 }
 
 // ---------- respostas fundamentadas (busca nos dados do usuário) ----------

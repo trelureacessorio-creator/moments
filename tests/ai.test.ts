@@ -83,3 +83,36 @@ describe("assistente e busca inteligente", () => {
     expect(msgs.some((m) => m.role === "assistant")).toBe(true);
   });
 });
+
+async function analyze(token: string, text: string) {
+  const res = await app.inject({ method: "POST", url: "/ai/diary/analyze", headers: bearer(token), payload: { text } });
+  return res.json() as any;
+}
+
+describe("diário inteligente", () => {
+  it("gera título, resumo e sentimento, sem criar nada", async () => {
+    const u = await register(app, "a@x.com"); await seed(u.userId);
+    const before = await prisma.diaryEntry.count({ where: { ownerId: u.userId } });
+    const r = await analyze(u.accessToken, "Hoje levamos as crianças ao parque e foi maravilhoso, me senti muito feliz.");
+    expect(r.title.toLowerCase()).toContain("hoje levamos as crianças");
+    expect(r.summary.length).toBeGreaterThan(0);
+    expect(r.mood).toBe("Alegria");
+    const after = await prisma.diaryEntry.count({ where: { ownerId: u.userId } });
+    expect(after).toBe(before);
+  });
+
+  it("detecta sentimentos diferentes", async () => {
+    const u = await register(app, "a@x.com"); await seed(u.userId);
+    expect((await analyze(u.accessToken, "Estou muito ansiosa e preocupada com o trabalho.")).mood).toBe("Ansiedade");
+    expect((await analyze(u.accessToken, "Sou muito grata por tudo que aconteceu.")).mood).toBe("Gratidão");
+  });
+
+  it("extrai um compromisso citado no relato como sugestão", async () => {
+    const u = await register(app, "a@x.com"); await seed(u.userId);
+    const r = await analyze(u.accessToken, "Tenho consulta no dentista amanhã às 10h.");
+    expect(r.suggestion).toBeTruthy();
+    expect(r.suggestion.collection).toBe("appointments");
+    expect(r.suggestion.fields.time).toBe("10:00");
+    expect(r.suggestion.fields.title).toBe("Consulta no dentista");
+  });
+});
