@@ -360,6 +360,7 @@ model Notification {
   entityType  String?
   entityId    String?
   message     String
+  dedupeKey   String?   @unique // evita gerar o mesmo aviso duas vezes
   scheduledAt DateTime
   status      String    @default("scheduled")
   sentAt      DateTime?

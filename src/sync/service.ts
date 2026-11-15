@@ -78,6 +78,7 @@ export async function push(
   const applied: { collection: string; id: string; rev: number }[] = [];
   const conflicts: { collection: string; id: string; server: Row }[] = [];
   const rejected: { collection: string; id: string; reason: string }[] = [];
+  const actor = await prisma.user.findUnique({ where: { id: uid }, select: { name: true } });
 
   for (const [name, list] of Object.entries(incoming)) {
     const cfg = registry[name];
@@ -136,6 +137,7 @@ export async function push(
             await delegate.update({ where: { id }, data: { deletedAt: new Date(), rev } });
             if (existing.ownerId !== uid) {
               await logChange(name, id, existing.ownerId, uid, "deleted", "", "");
+              await notifyOwner(existing.ownerId, name, id, titleOf(existing), actor?.name, "excluiu");
             }
           }
           applied.push({ collection: name, id, rev });
@@ -145,6 +147,7 @@ export async function push(
         if (existing) {
           if (existing.ownerId !== uid) {
             await logChanges(name, id, existing.ownerId, uid, existing, fields);
+            await notifyOwner(existing.ownerId, name, id, titleOf(existing), actor?.name, "alterou");
           }
           await delegate.update({ where: { id }, data: { ...fields, rev, deletedAt: null } });
         } else {
@@ -163,6 +166,37 @@ export async function push(
 
   const cursor = applied.reduce((m, a) => Math.max(m, a.rev), 0);
   return { applied, conflicts, rejected, cursor };
+}
+
+function titleOf(rec: Row): string {
+  return rec.title || rec.text || rec.name || "um item";
+}
+
+// Avisa o dono quando um terceiro autorizado altera/exclui um item compartilhado.
+async function notifyOwner(
+  ownerId: string,
+  entityType: string,
+  entityId: string,
+  title: string,
+  actorName: string | undefined,
+  verb: string
+) {
+  await prisma.notification
+    .create({
+      data: {
+        ownerId,
+        type: "shared_change",
+        message: `${actorName || "Alguém"} ${verb} "${title}"`,
+        entityType,
+        entityId,
+        dedupeKey: `${ownerId}:shared:${entityId}:${Date.now()}:${Math.random()}`,
+        scheduledAt: new Date(),
+        status: "sent",
+        sentAt: new Date(),
+        rev: await nextRev(),
+      },
+    })
+    .catch(() => {});
 }
 
 async function logChange(

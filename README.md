@@ -18,6 +18,10 @@ qual as fases seguintes (IA, notificações, telas) são construídas.
 - **Compartilhamento e auditoria**: compartilhar um item por **e-mail** da conta, permissão
   **ver**/**editar** por item, histórico de alterações (quem, o quê, antes, depois) e
   revogação.
+- **Notificações programadas**: um agendador gera os avisos (resumo da manhã, conferência
+  noturna, planejamento de domingo e alerta de meta a 10 dias do prazo) respeitando o fuso
+  e os horários de cada usuário, sem duplicar; alterações em itens compartilhados avisam o
+  dono. Os avisos sincronizam como registros `Notification` e podem ser marcados como lidos.
 - **Privacidade por padrão**: toda consulta filtra por proprietário ou compartilhamento
   ativo; ninguém lê o que não é seu.
 
@@ -101,6 +105,21 @@ Exclusão: inclua `"deleted": true`. Criação: envie um `id` (uuid) que ainda n
 ```
 Resposta: `{ changes: { <coleção>: [registros...] }, cursor }` — inclui tombstones
 (`deletedAt`) e itens compartilhados com você.
+
+## Notificações programadas
+
+Um agendador roda a cada minuto (ver `src/index.ts`) e chama
+`generateDueNotifications(now)` (`src/notifications/generator.ts`), que cria os avisos
+vencidos de cada usuário conforme suas preferências (horários e fuso), de forma idempotente
+(campo `dedupeKey`). Fora de produção há uma rota de apoio para disparar a geração num
+instante dado, útil em testes:
+
+```
+POST /dev/run-notifications   { "at": "2026-11-15T23:00:00Z" }   -> { "created": N }
+```
+
+Marcar como lida é uma escrita normal de sincronização sobre a coleção `notifications`
+(`status: "read"`), então funciona offline e sincroniza como qualquer outra mudança.
 
 ## Limitações conhecidas desta fase
 

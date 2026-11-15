@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
-import { prisma } from "../db";
+import { prisma, nextRev } from "../db";
 import { hashPassword, verifyPassword } from "./password";
 import { requireAuth, userId } from "./guard";
 import {
@@ -56,6 +56,10 @@ export async function authRoutes(app: FastifyInstance) {
     const user = await prisma.user.create({
       data: { email, name: body.name, passwordHash: await hashPassword(body.password) },
     });
+    // Preferências padrão (habilitam as notificações programadas).
+    await prisma.preference
+      .create({ data: { ownerId: user.id, morning: "07:00", night: "20:00", sunday: "18:00", rev: await nextRev() } })
+      .catch(() => {});
     const tokens = await createSession(user.id, body.deviceName, req.headers["user-agent"]);
     return reply.code(201).send({ user: publicUser(user), ...tokens });
   });
