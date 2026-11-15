@@ -2,22 +2,25 @@ import { useState } from "react";
 import { useStore, doLogout, pull } from "./lib/store";
 import { Auth } from "./screens/Auth";
 import { MeuDia } from "./screens/MeuDia";
-import { Tarefas } from "./screens/Tarefas";
 import { Calendario } from "./screens/Calendario";
 import { Conversar } from "./screens/Conversar";
 import { Diario } from "./screens/Diario";
+import { Mais } from "./screens/Mais";
+import { Metas } from "./screens/Metas";
+import { Habitos } from "./screens/Habitos";
+import { Tarefas } from "./screens/Tarefas";
 import { Notificacoes } from "./screens/Notificacoes";
 
-type Tab = "meudia" | "calendario" | "conversar" | "diario" | "tarefas" | "notificacoes";
+type Tab = "meudia" | "calendario" | "conversar" | "diario" | "mais" | "metas" | "habitos" | "tarefas" | "notificacoes";
 
 const NAV: { id: Tab; ic: string; label: string }[] = [
   { id: "meudia", ic: "◉", label: "Meu Dia" },
   { id: "calendario", ic: "▦", label: "Agenda" },
   { id: "conversar", ic: "✦", label: "Conversar" },
   { id: "diario", ic: "✎", label: "Diário" },
-  { id: "tarefas", ic: "✓", label: "Tarefas" },
-  { id: "notificacoes", ic: "◔", label: "Avisos" },
+  { id: "mais", ic: "⋯", label: "Mais" },
 ];
+const SECONDARY = new Set<Tab>(["metas", "habitos", "tarefas", "notificacoes"]);
 
 export function App() {
   const s = useStore();
@@ -25,6 +28,9 @@ export function App() {
 
   if (!s.ready) return <div className="loading">Carregando…</div>;
   if (!s.user) return <Auth />;
+
+  const activeNav: Tab = SECONDARY.has(tab) ? "mais" : tab;
+  const back = () => setTab("mais");
 
   return (
     <div className="app">
@@ -45,14 +51,17 @@ export function App() {
         {tab === "calendario" && <Calendario />}
         {tab === "conversar" && <Conversar />}
         {tab === "diario" && <Diario />}
-        {tab === "tarefas" && <Tarefas />}
-        {tab === "notificacoes" && <Notificacoes />}
+        {tab === "mais" && <Mais go={(t) => setTab(t as Tab)} />}
+        {tab === "metas" && <Metas onBack={back} />}
+        {tab === "habitos" && <Habitos onBack={back} />}
+        {tab === "tarefas" && <Tarefas onBack={back} />}
+        {tab === "notificacoes" && <Notificacoes onBack={back} />}
       </main>
 
       <nav>
         <div className="nav-row">
           {NAV.map((n) => (
-            <button key={n.id} className={"nav-item" + (tab === n.id ? " on" : "")} onClick={() => setTab(n.id)}>
+            <button key={n.id} className={"nav-item" + (activeNav === n.id ? " on" : "")} onClick={() => setTab(n.id)}>
               <span className="n-ic">{n.ic}</span>
               {n.label}
             </button>

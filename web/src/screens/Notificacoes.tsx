@@ -14,7 +14,7 @@ function whenLabel(n: any) {
   return d.toLocaleString("pt-BR", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
-export function Notificacoes() {
+export function Notificacoes({ onBack }: { onBack?: () => void }) {
   const s = useStore();
   const notes = list(s.data, "notifications")
     .filter((n) => !n.deletedAt)
@@ -30,6 +30,7 @@ export function Notificacoes() {
 
   return (
     <>
+      {onBack && <button className="back" onClick={onBack}>‹ Mais</button>}
       <div className="hero">
         <h1 className="scr-title">Notificações</h1>
         <p className="scr-sub">{unread.length ? `${unread.length} não lida${unread.length !== 1 ? "s" : ""}` : "Tudo em dia."}</p>

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useStore, list, createRecord, updateRecord, deleteRecord } from "../lib/store";
 import { isoToday, fmtRel, cap } from "../lib/dates";
 
-export function Tarefas() {
+export function Tarefas({ onBack }: { onBack?: () => void }) {
   const s = useStore();
   const [text, setText] = useState("");
   const [priority, setPriority] = useState("");
@@ -23,6 +23,7 @@ export function Tarefas() {
 
   return (
     <>
+      {onBack && <button className="back" onClick={onBack}>‹ Mais</button>}
       <div className="hero"><h1 className="scr-title">Tarefas</h1><p className="scr-sub">{pending.length} pendente{pending.length !== 1 ? "s" : ""} · {done.length} concluída{done.length !== 1 ? "s" : ""}</p></div>
 
       <section>
