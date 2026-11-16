@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { useStore, doLogout, pull } from "./lib/store";
+import { useStore, list, doLogout, pull } from "./lib/store";
+import { BellIcon } from "./lib/icons";
 import { Auth } from "./screens/Auth";
 import { MeuDia } from "./screens/MeuDia";
 import { Calendario } from "./screens/Calendario";
@@ -39,6 +40,8 @@ export function App() {
   const activeNav: Tab = SECONDARY.has(tab) ? "mais" : tab;
   const back = () => setTab("mais");
 
+  const unread = list(s.data, "notifications").filter((n) => !n.deletedAt && n.status !== "read" && !n.readAt).length;
+
   return (
     <div className="app">
       <header>
@@ -46,6 +49,10 @@ export function App() {
           <div className="brand"><span className="dot" />Moments</div>
           <div className="bar-right">
             {s.syncing && <span className="syncdot">sincronizando…</span>}
+            <button className="bell" onClick={() => setTab("notificacoes")} aria-label={`Avisos${unread ? ` (${unread} não lidos)` : ""}`}>
+              <BellIcon />
+              {unread > 0 && <span className="bell-badge">{unread > 9 ? "9+" : unread}</span>}
+            </button>
             <button className="chip-btn" onClick={() => pull()}>Atualizar</button>
             <button className="chip-btn" onClick={() => doLogout()}>Sair</button>
           </div>
