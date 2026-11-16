@@ -1,6 +1,10 @@
 const ITEMS: { id: string; ic: string; name: string; desc: string }[] = [
   { id: "metas", ic: "◈", name: "Metas", desc: "progresso e ritmo" },
   { id: "habitos", ic: "◷", name: "Hábitos", desc: "sequências diárias" },
+  { id: "dinheiro", ic: "◈", name: "Meu Dinheiro", desc: "receitas e gastos" },
+  { id: "evolucao", ic: "◴", name: "Minha Evolução", desc: "resumos e conquistas" },
+  { id: "pessoas", ic: "♥", name: "Pessoas", desc: "contatos importantes" },
+  { id: "sonhos", ic: "✦", name: "Sonhos e Ideias", desc: "inspirações" },
   { id: "tarefas", ic: "✓", name: "Tarefas", desc: "pendentes e concluídas" },
   { id: "notificacoes", ic: "◔", name: "Avisos", desc: "lembretes e alertas" },
 ];

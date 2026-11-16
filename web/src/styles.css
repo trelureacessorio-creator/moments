@@ -219,3 +219,13 @@ textarea.note:focus { border-color: var(--accent); }
 .more-cell .m-name { font-weight: 600; font-size: 14px; }
 .more-cell .m-desc { font-size: 11.5px; color: var(--muted); }
 .back { display: inline-flex; align-items: center; gap: 6px; background: transparent; border: none; color: var(--muted); font-size: 13px; font-weight: 500; padding: 4px 0; margin-bottom: 4px; cursor: pointer; }
+
+/* finanças (barras) */
+.bar-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; }
+.bar-lab { font-size: 12.5px; color: var(--muted); width: 92px; flex: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar-track { flex: 1; min-width: 0; height: 10px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+.bar-fill { height: 100%; border-radius: 999px; background: linear-gradient(90deg, var(--accent), var(--warm)); }
+.bar-val { font-size: 12.5px; font-weight: 600; font-variant-numeric: tabular-nums; flex: none; width: 76px; text-align: right; }
+/* pessoas */
+.plines { font-size: 12.5px; color: var(--muted); margin-top: 8px; display: flex; flex-direction: column; gap: 3px; }
+.avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-weight: 700; display: grid; place-items: center; font-size: 14px; flex: none; }

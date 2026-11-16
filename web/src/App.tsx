@@ -8,10 +8,14 @@ import { Diario } from "./screens/Diario";
 import { Mais } from "./screens/Mais";
 import { Metas } from "./screens/Metas";
 import { Habitos } from "./screens/Habitos";
+import { MeuDinheiro } from "./screens/MeuDinheiro";
+import { Evolucao } from "./screens/Evolucao";
+import { Pessoas } from "./screens/Pessoas";
+import { SonhosIdeias } from "./screens/SonhosIdeias";
 import { Tarefas } from "./screens/Tarefas";
 import { Notificacoes } from "./screens/Notificacoes";
 
-type Tab = "meudia" | "calendario" | "conversar" | "diario" | "mais" | "metas" | "habitos" | "tarefas" | "notificacoes";
+type Tab = "meudia" | "calendario" | "conversar" | "diario" | "mais" | "metas" | "habitos" | "dinheiro" | "evolucao" | "pessoas" | "sonhos" | "tarefas" | "notificacoes";
 
 const NAV: { id: Tab; ic: string; label: string }[] = [
   { id: "meudia", ic: "◉", label: "Meu Dia" },
@@ -20,7 +24,7 @@ const NAV: { id: Tab; ic: string; label: string }[] = [
   { id: "diario", ic: "✎", label: "Diário" },
   { id: "mais", ic: "⋯", label: "Mais" },
 ];
-const SECONDARY = new Set<Tab>(["metas", "habitos", "tarefas", "notificacoes"]);
+const SECONDARY = new Set<Tab>(["metas", "habitos", "dinheiro", "evolucao", "pessoas", "sonhos", "tarefas", "notificacoes"]);
 
 export function App() {
   const s = useStore();
@@ -54,6 +58,10 @@ export function App() {
         {tab === "mais" && <Mais go={(t) => setTab(t as Tab)} />}
         {tab === "metas" && <Metas onBack={back} />}
         {tab === "habitos" && <Habitos onBack={back} />}
+        {tab === "dinheiro" && <MeuDinheiro onBack={back} />}
+        {tab === "evolucao" && <Evolucao onBack={back} />}
+        {tab === "pessoas" && <Pessoas onBack={back} />}
+        {tab === "sonhos" && <SonhosIdeias onBack={back} />}
         {tab === "tarefas" && <Tarefas onBack={back} />}
         {tab === "notificacoes" && <Notificacoes onBack={back} />}
       </main>
