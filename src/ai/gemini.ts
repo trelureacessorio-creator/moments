@@ -6,29 +6,50 @@ import { CHAT_SYSTEM, DIARY_SYSTEM, parseDiaryJson } from "./prompts";
 
 const MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
 const BASE = "https://generativelanguage.googleapis.com/v1beta/models";
+// Status transitórios do Google: vale repetir a chamada.
+const TRANSIENT = new Set([429, 500, 502, 503, 504]);
 
 export function isGeminiEnabled(): boolean {
   return Boolean(process.env.GEMINI_API_KEY);
 }
 
+// POST ao Gemini com novas tentativas em erros transitórios (sobrecarga/limite).
+// Retorna a Response (mesmo com erro não-transitório, p/ diagnóstico) ou null se não há chave.
+async function postGemini(body: object): Promise<Response | null> {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return null;
+  const url = `${BASE}/${MODEL}:generateContent?key=${encodeURIComponent(key)}`;
+  const delays = [0, 700, 1600]; // tentativa imediata + 2 reenvios com espera
+  let last: Response | null = null;
+  for (const d of delays) {
+    if (d) await new Promise((r) => setTimeout(r, d));
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(20000),
+      });
+      if (res.ok) return res;
+      last = res;
+      if (!TRANSIENT.has(res.status)) return res; // erro definitivo: não insiste
+    } catch {
+      last = null; // rede/timeout: tenta de novo
+    }
+  }
+  return last;
+}
+
 type GenConfig = { maxOutputTokens: number; temperature?: number; responseMimeType?: string };
 
 async function generate(system: string, userText: string, gen: GenConfig): Promise<string | null> {
-  const key = process.env.GEMINI_API_KEY;
-  if (!key) return null;
   try {
-    const res = await fetch(`${BASE}/${MODEL}:generateContent?key=${encodeURIComponent(key)}`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        systemInstruction: { parts: [{ text: system }] },
-        contents: [{ role: "user", parts: [{ text: userText }] }],
-        generationConfig: gen,
-      }),
-      // Evita travar a resposta do app se o Google demorar.
-      signal: AbortSignal.timeout(20000),
+    const res = await postGemini({
+      systemInstruction: { parts: [{ text: system }] },
+      contents: [{ role: "user", parts: [{ text: userText }] }],
+      generationConfig: gen,
     });
-    if (!res.ok) return null;
+    if (!res || !res.ok) return null;
     const data: any = await res.json();
     const parts = data?.candidates?.[0]?.content?.parts;
     if (!Array.isArray(parts)) return null;
@@ -40,19 +61,14 @@ async function generate(system: string, userText: string, gen: GenConfig): Promi
 }
 
 // Diagnóstico: faz uma chamada mínima e devolve o resultado SEM expor a chave.
-// Útil para descobrir, em produção, por que a IA não respondeu.
 export async function geminiDiagnose(): Promise<{
   enabled: boolean; ok: boolean; status: number | null; model: string; error: string | null;
 }> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return { enabled: false, ok: false, status: null, model: MODEL, error: "GEMINI_API_KEY ausente" };
   try {
-    const res = await fetch(`${BASE}/${MODEL}:generateContent?key=${encodeURIComponent(key)}`, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "ping" }] }], generationConfig: { maxOutputTokens: 5 } }),
-      signal: AbortSignal.timeout(20000),
-    });
+    const res = await postGemini({ contents: [{ role: "user", parts: [{ text: "ping" }] }], generationConfig: { maxOutputTokens: 5 } });
+    if (!res) return { enabled: true, ok: false, status: null, model: MODEL, error: "sem resposta (rede/timeout)" };
     if (!res.ok) {
       let body = "";
       try { body = (await res.text()).slice(0, 300); } catch { /* ignore */ }
