@@ -1,4 +1,5 @@
 import { prisma, nextRev } from "../db";
+import { sendPushToUser } from "../push/service";
 
 // Gera as notificações "vencidas" até o instante `now`, respeitando o fuso e os
 // horários de cada usuário. Idempotente: a mesma notificação (dedupeKey) nunca é
@@ -39,15 +40,18 @@ async function ensure(
 ): Promise<number> {
   const exists = await prisma.notification.findUnique({ where: { dedupeKey } });
   if (exists) return 0;
+  const msg = await message();
   await prisma.notification.create({
     data: {
       ownerId, type, dedupeKey,
-      message: await message(),
+      message: msg,
       scheduledAt: now, status: "sent", sentAt: now,
       rev: await nextRev(),
       ...extra,
     },
   });
+  // Dispara o push para os dispositivos do usuário (não bloqueia a geração).
+  void sendPushToUser(ownerId, { title: "Moments", body: msg, url: "/", tag: type }).catch(() => {});
   return 1;
 }
 

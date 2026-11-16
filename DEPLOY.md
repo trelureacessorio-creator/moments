@@ -149,4 +149,16 @@ baixado sob demanda por `GET /files/:id/content` (autenticado; dono ou compartil
 Sem custo e sem serviço externo. Para grande volume no futuro, dá para migrar o
 armazenamento para S3/R2 com URLs assinadas (o ponto de troca é `src/files/routes.ts`).
 
+## Lembretes no celular (push) e app instalável (PWA)
+
+O app é instalável (manifesto + ícones + service worker) e envia **notificações push**
+(Web Push) mesmo com o app fechado. **Não precisa configurar segredos**: o servidor gera
+e guarda as chaves VAPID sozinho (tabela `AppConfig`). Opcionalmente dá para fixá-las por
+`VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` e definir `VAPID_SUBJECT` (padrão `mailto:no-reply@moments.app`).
+
+A pessoa ativa em **Configurações → Lembretes no celular**. No **iPhone**, o push do iOS
+exige **adicionar o app à Tela de Início** (Safari → Compartilhar → “Adicionar à Tela de
+Início”) e iOS 16.4+; a própria tela mostra o passo a passo. No Android/desktop funciona
+direto pelo navegador.
+
 ## Pendente para versões seguintes

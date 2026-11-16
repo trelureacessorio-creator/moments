@@ -109,6 +109,15 @@ export const api = {
   sessions() {
     return request<{ sessions: { id: string; deviceName: string | null; userAgent: string | null; createdAt: string; lastUsedAt: string }[] }>("/auth/sessions");
   },
+  pushKey() {
+    return request<{ key: string }>("/push/key", { auth: false });
+  },
+  pushSubscribe(sub: { endpoint: string; keys: { p256dh: string; auth: string } }) {
+    return request("/push/subscribe", { method: "POST", body: JSON.stringify(sub) });
+  },
+  pushUnsubscribe(endpoint: string) {
+    return request("/push/unsubscribe", { method: "POST", body: JSON.stringify({ endpoint }) });
+  },
   deleteSession(id: string) {
     return request(`/auth/sessions/${id}`, { method: "DELETE" });
   },

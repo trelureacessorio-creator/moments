@@ -183,6 +183,8 @@ body.chat-mode main { padding: 0; height: calc(100vh - 55px - 61px); height: cal
 .cfg-note { font-size: 12px; color: var(--muted); margin-top: 6px; }
 .cfg-row input[type="time"], .cfg-row select { border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 9px; padding: 7px 9px; font-size: 14px; }
 .sw { width: 20px; height: 20px; accent-color: var(--accent); }
+.cfg-steps { margin: 8px 0 0; padding-left: 18px; font-size: 13px; color: var(--muted); line-height: 1.6; }
+.cfg-steps b { color: var(--fg); }
 /* seletor segmentado (ex.: tema) */
 .seg { display: flex; gap: 6px; background: var(--surface-2); padding: 4px; border-radius: 12px; }
 .seg-btn { flex: 1; border: none; background: transparent; color: var(--muted); font-size: 13.5px; font-weight: 500; padding: 9px 0; border-radius: 9px; }

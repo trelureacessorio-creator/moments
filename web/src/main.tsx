@@ -11,3 +11,10 @@ createRoot(document.getElementById("root")!).render(
 );
 
 void init();
+
+// Registra o service worker (necessário para push e para instalar como app).
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {});
+  });
+}

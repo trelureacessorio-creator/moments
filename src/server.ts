@@ -9,6 +9,7 @@ import { syncRoutes } from "./sync/routes";
 import { sharingRoutes } from "./sharing/routes";
 import { aiRoutes } from "./ai/routes";
 import { fileRoutes } from "./files/routes";
+import { pushRoutes } from "./push/routes";
 import { devRoutes } from "./dev/routes";
 import { env } from "./env";
 
@@ -51,6 +52,7 @@ export function buildServer(): FastifyInstance {
   app.register(sharingRoutes);
   app.register(aiRoutes);
   app.register(fileRoutes);
+  app.register(pushRoutes);
   if (env.NODE_ENV !== "production") app.register(devRoutes);
 
   return app;

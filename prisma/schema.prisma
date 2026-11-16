@@ -404,6 +404,25 @@ model FileBlob {
   @@index([ownerId])
 }
 
+// Configuração interna do servidor (ex.: chaves VAPID geradas uma vez).
+model AppConfig {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+// Inscrição de push de um dispositivo (Web Push). Um registro por endpoint.
+model PushSubscription {
+  id        String   @id @default(uuid())
+  ownerId   String
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([ownerId])
+}
+
 model Retrospective {
   id          String    @id @default(uuid())
   ownerId     String

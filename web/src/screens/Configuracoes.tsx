@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useStore, list, updateRecord, pull, doLogout } from "../lib/store";
 import { api } from "../lib/api";
 import { getTheme, applyTheme, type Theme } from "../lib/theme";
+import { pushSupported, isStandalone, pushStatus, enablePush, disablePush, type PushState } from "../lib/push";
 
 const TIMEZONES = [
   "America/Sao_Paulo", "America/Bahia", "America/Fortaleza", "America/Recife",
@@ -31,8 +32,32 @@ export function Configuracoes({ onBack }: { onBack: () => void }) {
   const [sessions, setSessions] = useState<Sess[] | null>(null);
   const [newPriority, setNewPriority] = useState("");
   const [theme, setTheme] = useState<Theme>(getTheme());
+  const [pushSt, setPushSt] = useState<PushState | "loading">("loading");
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushMsg, setPushMsg] = useState<string | null>(null);
+  const isIOS = typeof navigator !== "undefined" && /iphone|ipad|ipod/i.test(navigator.userAgent);
 
   function chooseTheme(t: Theme) { setTheme(t); applyTheme(t); }
+
+  useEffect(() => { pushStatus().then(setPushSt); }, []);
+
+  async function togglePush() {
+    setPushBusy(true); setPushMsg(null);
+    try {
+      if (pushSt === "on") {
+        await disablePush();
+        setPushSt("off");
+      } else {
+        const r = await enablePush();
+        if (r === "on") { setPushSt("on"); setPushMsg("Lembretes ativados neste aparelho. ✓"); }
+        else if (r === "denied") setPushMsg("Permissão negada. Ative as notificações do Moments nas configurações do aparelho.");
+        else if (r === "unsupported") setPushMsg("Este navegador não suporta lembretes.");
+        else setPushMsg("Não foi possível ativar agora. Tente de novo.");
+      }
+    } finally {
+      setPushBusy(false);
+    }
+  }
 
   useEffect(() => { if (!pref) pull().catch(() => {}); }, [pref]);
   useEffect(() => { api.sessions().then((r) => setSessions(r.sessions)).catch(() => setSessions([])); }, []);
@@ -71,6 +96,34 @@ export function Configuracoes({ onBack }: { onBack: () => void }) {
           <div className="cfg-h">Perfil</div>
           <div className="cfg-row"><span className="cfg-lbl">Nome</span><span className="cfg-val">{s.user?.name}</span></div>
           <div className="cfg-row"><span className="cfg-lbl">E-mail</span><span className="cfg-val">{s.user?.email}</span></div>
+        </div>
+      </section>
+
+      {/* Lembretes no celular (push) */}
+      <section>
+        <div className="card pad">
+          <div className="cfg-h">Lembretes no celular</div>
+          {pushSt === "unsupported" ? (
+            <p className="cfg-note">Este navegador não suporta lembretes no aparelho.</p>
+          ) : isIOS && !isStandalone() ? (
+            <>
+              <p className="cfg-note">Para receber lembretes no iPhone, primeiro adicione o Moments à Tela de Início:</p>
+              <ol className="cfg-steps">
+                <li>Toque no botão <b>Compartilhar</b> (quadrado com seta) do Safari.</li>
+                <li>Escolha <b>“Adicionar à Tela de Início”</b>.</li>
+                <li>Abra o Moments pelo ícone criado e volte aqui para <b>Ativar</b>.</li>
+              </ol>
+            </>
+          ) : (
+            <>
+              <p className="cfg-note">Receba avisos (resumo do dia, metas, mudanças compartilhadas) mesmo com o app fechado.</p>
+              <button className="btn" style={{ marginTop: 10, width: "100%" }} onClick={togglePush} disabled={pushBusy || pushSt === "loading"}>
+                {pushBusy ? "…" : pushSt === "on" ? "Desativar lembretes neste aparelho" : "Ativar lembretes neste aparelho"}
+              </button>
+              {pushSt === "denied" && <p className="cfg-note">As notificações estão bloqueadas. Permita o Moments nas configurações do navegador/aparelho.</p>}
+            </>
+          )}
+          {pushMsg && <p className="cfg-note">{pushMsg}</p>}
         </div>
       </section>
 
