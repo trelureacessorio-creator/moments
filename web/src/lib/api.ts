@@ -171,4 +171,30 @@ export const api = {
     const data = (await res.json()) as { text: string };
     return data.text;
   },
+  // Envia o conteúdo binário de um arquivo já criado (metadados via sync).
+  async uploadFile(id: string, file: Blob, filename = "arquivo"): Promise<{ ok: boolean; size: number; mime: string }> {
+    const form = new FormData();
+    form.append("file", file, filename);
+    const send = async () => {
+      const headers: Record<string, string> = {};
+      if (tokens?.accessToken) headers.authorization = `Bearer ${tokens.accessToken}`;
+      return fetch(`${API_URL}/files/${id}/upload`, { method: "POST", headers, body: form });
+    };
+    let res = await send();
+    if (res.status === 401 && tokens?.refreshToken && (await tryRefresh())) res = await send();
+    if (!res.ok) throw new ApiError(res.status, await res.json().catch(() => ({})));
+    return (await res.json()) as { ok: boolean; size: number; mime: string };
+  },
+  // Baixa o conteúdo do arquivo (autenticado) e devolve uma URL de objeto para abrir.
+  async fileBlobUrl(id: string): Promise<string> {
+    const send = async () => {
+      const headers: Record<string, string> = {};
+      if (tokens?.accessToken) headers.authorization = `Bearer ${tokens.accessToken}`;
+      return fetch(`${API_URL}/files/${id}/content`, { headers });
+    };
+    let res = await send();
+    if (res.status === 401 && tokens?.refreshToken && (await tryRefresh())) res = await send();
+    if (!res.ok) throw new ApiError(res.status, await res.json().catch(() => ({})));
+    return URL.createObjectURL(await res.blob());
+  },
 };

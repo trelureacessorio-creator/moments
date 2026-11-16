@@ -107,7 +107,7 @@ e troque o `CMD` da API por apenas `node dist/index.js`.
 | 7 | Busca inteligente encontra o antigo | `tests/ai.test.ts` |
 | 8 | Compartilhamento respeita autorizações | `tests/sharing.test.ts` |
 | 9 | Alteração gera histórico e aviso | `tests/sharing.test.ts` + `tests/notifications.test.ts` |
-| 10 | Arquivos guardam e recuperam | Pendente (upload real requer S3) |
+| 10 | Arquivos guardam e recuperam | `tests/files.test.ts` (upload + download + acesso) |
 | 11 | Financeiro calcula certo | App web (Meu Dinheiro); saldo só com dados suficientes |
 | 12 | Sincronização entre dispositivos | `tests/sync.test.ts` + E2E (navegador limpo) |
 | 13 | Privacidade: sem acesso indevido | `tests/privacy.test.ts` |
@@ -141,6 +141,12 @@ Groq** (rota `/ai/transcribe`). Usa a mesma `GROQ_API_KEY`; o modelo de transcri
 descoberto automaticamente (`GROQ_WHISPER_MODEL` é opcional, ex.: `whisper-large-v3-turbo`).
 Sem a chave, o microfone some e o texto continua podendo ser digitado.
 
-## Pendente para versões seguintes
+## Arquivos (upload real, já integrado)
 
-- **Arquivos (upload real)**: armazenamento de objetos (S3/R2) com URLs assinadas.
+Upload e download reais de arquivos (documentos, fotos, comprovantes), até **15 MB** cada.
+O binário é guardado no próprio Postgres (tabela `FileBlob`, fora da sincronização) e
+baixado sob demanda por `GET /files/:id/content` (autenticado; dono ou compartilhado).
+Sem custo e sem serviço externo. Para grande volume no futuro, dá para migrar o
+armazenamento para S3/R2 com URLs assinadas (o ponto de troca é `src/files/routes.ts`).
+
+## Pendente para versões seguintes

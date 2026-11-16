@@ -390,6 +390,20 @@ model AiMessage {
   @@index([ownerId, rev])
 }
 
+// Conteúdo binário de um arquivo (upload real). Fica FORA da sincronização:
+// o FileItem (metadados) sincroniza normalmente; o binário é baixado sob demanda.
+model FileBlob {
+  id         String   @id @default(uuid())
+  fileItemId String   @unique
+  ownerId    String
+  mime       String
+  size       Int
+  data       Bytes
+  createdAt  DateTime @default(now())
+
+  @@index([ownerId])
+}
+
 model Retrospective {
   id          String    @id @default(uuid())
   ownerId     String

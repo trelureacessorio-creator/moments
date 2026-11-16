@@ -150,6 +150,9 @@ body.chat-mode main { padding: 0; height: calc(100vh - 55px - 61px); height: cal
 .chat-bottom .chips { flex-wrap: nowrap; overflow-x: auto; margin: 0 0 8px; padding-bottom: 2px; scrollbar-width: none; }
 .chat-bottom .chips::-webkit-scrollbar { display: none; }
 .chat-bottom .chip { flex: none; white-space: nowrap; }
+/* escolher arquivo (Arquivos) */
+.file-pick { display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 2px; }
+.file-pick label { cursor: pointer; max-width: 72%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chat { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
 .msg { max-width: 85%; padding: 10px 13px; border-radius: 16px; font-size: 14px; line-height: 1.45; white-space: pre-wrap; }
 .msg.me { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 5px; }

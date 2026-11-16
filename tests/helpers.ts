@@ -3,7 +3,7 @@ import { prisma, ensureRevSequence } from "../src/db";
 
 const TABLES = [
   "Session", "Share", "ChangeLog", "Preference", "Appointment", "Task", "Goal",
-  "GoalStep", "GoalHistory", "Habit", "HabitLog", "FinanceNote", "FileItem",
+  "GoalStep", "GoalHistory", "Habit", "HabitLog", "FinanceNote", "FileItem", "FileBlob",
   "DiaryEntry", "Dream", "Idea", "ImportantPerson", "Dependent", "Notification",
   "AiMessage", "Retrospective", "User",
 ];
