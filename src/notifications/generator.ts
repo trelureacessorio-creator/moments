@@ -84,6 +84,10 @@ export async function generateDueNotifications(now: Date = new Date(), onlyUserI
   });
 
   for (const u of users) {
+    // Boas-vindas: uma única vez por usuário (aparece mesmo com avisos desligados).
+    created += await ensure(u.id, "welcome", `${u.id}:welcome`, now,
+      () => "Bem-vindo(a) ao Moments! 🎉 Aqui chegam seus lembretes e avisos. Explore seu dia, suas metas, o diário e converse com o assistente.");
+
     const pref = await prisma.preference.findUnique({ where: { ownerId: u.id } });
     if (pref && pref.notifOn === false) continue;
     const tz = pref?.timezone || "America/Sao_Paulo";

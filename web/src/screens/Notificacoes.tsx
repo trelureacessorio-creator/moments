@@ -1,6 +1,7 @@
 import { useStore, list, updateRecord } from "../lib/store";
 
 const META: Record<string, { ic: string; soft: string }> = {
+  welcome: { ic: "🎉", soft: "var(--accent-soft)" },
   morning: { ic: "☀️", soft: "var(--warm-soft)" },
   night: { ic: "🌙", soft: "var(--surface-2)" },
   sunday: { ic: "📅", soft: "var(--surface-2)" },
