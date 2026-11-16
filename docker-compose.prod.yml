@@ -1,0 +1,48 @@
+# Produção (exemplo de referência): PostgreSQL + API + Web.
+# Troque TODOS os segredos por valores fortes e use um Postgres gerenciado em
+# produção de verdade. Ver DEPLOY.md.
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: moments
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-change-me}
+      POSTGRES_DB: moments
+    volumes:
+      - moments_pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U moments -d moments"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build: .
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://moments:${DB_PASSWORD:-change-me}@db:5432/moments?schema=public
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?defina um segredo forte}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:?defina um segredo forte}
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:8080}
+      NODE_ENV: production
+      PORT: 3000
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+
+  web:
+    build:
+      context: ./web
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "8080:80"
+
+volumes:
+  moments_pg:

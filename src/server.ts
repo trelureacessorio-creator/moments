@@ -11,7 +11,8 @@ import { env } from "./env";
 export function buildServer(): FastifyInstance {
   const app = Fastify({ logger: false });
 
-  app.register(cors, { origin: true });
+  const origins = env.CORS_ORIGIN.split(",").map((o) => o.trim()).filter(Boolean);
+  app.register(cors, { origin: origins.length ? origins : true });
 
   app.setErrorHandler((err, _req, reply) => {
     if (err instanceof ZodError) {

@@ -8,6 +8,9 @@ export const env = {
   REFRESH_TTL_DAYS: Number(process.env.REFRESH_TTL_DAYS ?? 60),
   PORT: Number(process.env.PORT ?? 3000),
   NODE_ENV: process.env.NODE_ENV ?? "development",
+  // Origens permitidas no CORS. Vazio = libera todas (desenvolvimento).
+  // Em produção, defina a(s) origem(ns) do app web, separadas por vírgula.
+  CORS_ORIGIN: process.env.CORS_ORIGIN ?? "",
 };
 
 if (env.NODE_ENV === "production") {
