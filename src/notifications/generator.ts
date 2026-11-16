@@ -76,9 +76,12 @@ function goalMessage(g: any): string {
   return `Faltam 10 dias para a meta "${g.name}".${rem ? ` Ainda faltam ${rem}.` : ""}`;
 }
 
-export async function generateDueNotifications(now: Date = new Date()): Promise<number> {
+export async function generateDueNotifications(now: Date = new Date(), onlyUserId?: string): Promise<number> {
   let created = 0;
-  const users = await prisma.user.findMany({ where: { status: "active" }, select: { id: true } });
+  const users = await prisma.user.findMany({
+    where: onlyUserId ? { id: onlyUserId, status: "active" } : { status: "active" },
+    select: { id: true },
+  });
 
   for (const u of users) {
     const pref = await prisma.preference.findUnique({ where: { ownerId: u.id } });

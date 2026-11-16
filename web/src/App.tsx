@@ -13,10 +13,11 @@ import { Evolucao } from "./screens/Evolucao";
 import { Pessoas } from "./screens/Pessoas";
 import { SonhosIdeias } from "./screens/SonhosIdeias";
 import { Familia } from "./screens/Familia";
+import { Arquivos } from "./screens/Arquivos";
 import { Tarefas } from "./screens/Tarefas";
 import { Notificacoes } from "./screens/Notificacoes";
 
-type Tab = "meudia" | "calendario" | "conversar" | "diario" | "mais" | "metas" | "habitos" | "dinheiro" | "evolucao" | "pessoas" | "sonhos" | "familia" | "tarefas" | "notificacoes";
+type Tab = "meudia" | "calendario" | "conversar" | "diario" | "mais" | "metas" | "habitos" | "dinheiro" | "evolucao" | "pessoas" | "sonhos" | "familia" | "arquivos" | "tarefas" | "notificacoes";
 
 const NAV: { id: Tab; ic: string; label: string }[] = [
   { id: "meudia", ic: "◉", label: "Meu Dia" },
@@ -25,7 +26,7 @@ const NAV: { id: Tab; ic: string; label: string }[] = [
   { id: "diario", ic: "✎", label: "Diário" },
   { id: "mais", ic: "⋯", label: "Mais" },
 ];
-const SECONDARY = new Set<Tab>(["metas", "habitos", "dinheiro", "evolucao", "pessoas", "sonhos", "familia", "tarefas", "notificacoes"]);
+const SECONDARY = new Set<Tab>(["metas", "habitos", "dinheiro", "evolucao", "pessoas", "sonhos", "familia", "arquivos", "tarefas", "notificacoes"]);
 
 export function App() {
   const s = useStore();
@@ -64,6 +65,7 @@ export function App() {
         {tab === "pessoas" && <Pessoas onBack={back} />}
         {tab === "sonhos" && <SonhosIdeias onBack={back} />}
         {tab === "familia" && <Familia onBack={back} />}
+        {tab === "arquivos" && <Arquivos onBack={back} />}
         {tab === "tarefas" && <Tarefas onBack={back} />}
         {tab === "notificacoes" && <Notificacoes onBack={back} />}
       </main>

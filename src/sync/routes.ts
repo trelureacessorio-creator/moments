@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAuth, userId } from "../auth/guard";
 import { pull, push } from "./service";
 import { collectionNames } from "./registry";
+import { generateDueNotifications } from "../notifications/generator";
 
 const pullSchema = z.object({
   cursor: z.number().int().nonnegative().default(0),
@@ -20,7 +21,11 @@ export async function syncRoutes(app: FastifyInstance) {
 
   app.post("/sync/pull", { preHandler: requireAuth }, async (req) => {
     const body = pullSchema.parse(req.body ?? {});
-    return pull(userId(req), body.cursor, body.collections);
+    const uid = userId(req);
+    // Gera os avisos devidos deste usuário aqui também, para que apareçam mesmo
+    // em hospedagens que suspendem o processo (sem depender só do agendador).
+    await generateDueNotifications(new Date(), uid).catch(() => {});
+    return pull(uid, body.cursor, body.collections);
   });
 
   app.post("/sync/push", { preHandler: requireAuth }, async (req) => {

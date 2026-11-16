@@ -6,6 +6,7 @@ const ITEMS: { id: string; ic: string; name: string; desc: string }[] = [
   { id: "familia", ic: "⇄", name: "Planejamento Familiar", desc: "compartilhar com a família" },
   { id: "pessoas", ic: "♥", name: "Pessoas", desc: "contatos importantes" },
   { id: "sonhos", ic: "✦", name: "Sonhos e Ideias", desc: "inspirações" },
+  { id: "arquivos", ic: "▤", name: "Arquivos", desc: "documentos e fotos" },
   { id: "tarefas", ic: "✓", name: "Tarefas", desc: "pendentes e concluídas" },
   { id: "notificacoes", ic: "◔", name: "Avisos", desc: "lembretes e alertas" },
 ];

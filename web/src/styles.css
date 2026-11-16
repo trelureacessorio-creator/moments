@@ -235,3 +235,7 @@ textarea.note:focus { border-color: var(--accent); }
 .permchip.edit { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
 .revoke { border: none; background: transparent; color: var(--faint); font-size: 20px; line-height: 1; width: 28px; flex: none; cursor: pointer; }
 .revoke:hover { color: var(--crit); }
+
+/* busca (arquivos) */
+.srch { width: 100%; border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: var(--r-sm); padding: 11px 13px; font-size: 14px; outline: none; margin-top: 6px; }
+.srch:focus { border-color: var(--accent); }
