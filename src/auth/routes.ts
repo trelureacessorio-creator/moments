@@ -124,6 +124,13 @@ export async function authRoutes(app: FastifyInstance) {
     return reply.send({ user: publicUser(user) });
   });
 
+  // Atualizar o nome do perfil.
+  app.post("/auth/profile", { preHandler: requireAuth }, async (req, reply) => {
+    const { name } = z.object({ name: z.string().trim().min(1).max(120) }).parse(req.body);
+    const user = await prisma.user.update({ where: { id: userId(req) }, data: { name } });
+    return reply.send({ user: publicUser(user) });
+  });
+
   // Trocar a senha (precisa da senha atual).
   app.post("/auth/password", { ...strictLimit, preHandler: requireAuth }, async (req, reply) => {
     const body = z.object({ currentPassword: z.string().min(1), newPassword: z.string().min(8).max(200) }).parse(req.body);

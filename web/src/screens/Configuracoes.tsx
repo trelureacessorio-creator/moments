@@ -62,6 +62,9 @@ export function Configuracoes({ onBack }: { onBack: () => void }) {
   const photoInput = useRef<HTMLInputElement>(null);
   const [photoBusy, setPhotoBusy] = useState(false);
   const [photoMsg, setPhotoMsg] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState(false);
+  const [nameVal, setNameVal] = useState("");
+  const [nameBusy, setNameBusy] = useState(false);
   const [curPwd, setCurPwd] = useState("");
   const [newPwd, setNewPwd] = useState("");
   const [confPwd, setConfPwd] = useState("");
@@ -84,6 +87,16 @@ export function Configuracoes({ onBack }: { onBack: () => void }) {
     } finally {
       setPhotoBusy(false);
     }
+  }
+
+  function startEditName() { setNameVal(s.user?.name || ""); setEditingName(true); }
+  async function saveName() {
+    const v = nameVal.trim();
+    if (!v) return;
+    setNameBusy(true);
+    try { setUser(await api.updateName(v)); setEditingName(false); }
+    catch { /* mantém edição aberta */ }
+    finally { setNameBusy(false); }
   }
 
   async function removePhoto() {
@@ -192,7 +205,24 @@ export function Configuracoes({ onBack }: { onBack: () => void }) {
             </div>
           </div>
           {photoMsg && <p className="cfg-note">{photoMsg}</p>}
-          <div className="cfg-row"><span className="cfg-lbl">Nome</span><span className="cfg-val">{s.user?.name}</span></div>
+          {editingName ? (
+            <div className="field" style={{ marginTop: 6 }}>
+              <label>Nome</label>
+              <input value={nameVal} onChange={(e) => setNameVal(e.target.value)} maxLength={120} autoFocus />
+              <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                <button className="btn" onClick={saveName} disabled={nameBusy || !nameVal.trim()}>{nameBusy ? "…" : "Salvar"}</button>
+                <button className="btn ghost" onClick={() => setEditingName(false)} disabled={nameBusy}>Cancelar</button>
+              </div>
+            </div>
+          ) : (
+            <div className="cfg-row">
+              <span className="cfg-lbl">Nome</span>
+              <span className="cfg-val" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                {s.user?.name}
+                <button className="chip-btn" onClick={startEditName}>editar</button>
+              </span>
+            </div>
+          )}
           <div className="cfg-row"><span className="cfg-lbl">E-mail</span><span className="cfg-val">{s.user?.email}</span></div>
         </div>
       </section>

@@ -125,6 +125,10 @@ export const api = {
   deleteSession(id: string) {
     return request(`/auth/sessions/${id}`, { method: "DELETE" });
   },
+  async updateName(name: string) {
+    const r = await request<{ user: PublicUser }>("/auth/profile", { method: "POST", body: JSON.stringify({ name }) });
+    return r.user;
+  },
   changePassword(currentPassword: string, newPassword: string) {
     return request<{ ok: boolean }>("/auth/password", { method: "POST", body: JSON.stringify({ currentPassword, newPassword }) });
   },
