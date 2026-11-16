@@ -30,6 +30,12 @@ export function buildServer(): FastifyInstance {
     allowList: () => env.NODE_ENV !== "production", // sem limite em dev/testes
   });
 
+  // Aceita corpo JSON vazio como {} (evita 400 "Body cannot be empty" em POSTs sem corpo).
+  app.addContentTypeParser("application/json", { parseAs: "string" }, (_req, body: string, done) => {
+    if (!body) return done(null, {});
+    try { done(null, JSON.parse(body)); } catch (e) { done(e as Error, undefined); }
+  });
+
   // Upload de áudio para transcrição (voz). Limite de 25 MB por arquivo.
   app.register(multipart, { limits: { fileSize: 25 * 1024 * 1024, files: 1 } });
 
