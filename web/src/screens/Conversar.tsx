@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useStore, list, createRecord, pull } from "../lib/store";
 import { api } from "../lib/api";
 
@@ -20,6 +20,12 @@ export function Conversar() {
   const messages = list(s.data, "aiMessages")
     .filter((m) => !m.deletedAt)
     .sort((a, b) => (a.rev || 0) - (b.rev || 0));
+
+  // Ao abrir e a cada nova mensagem, desce para o fim (últimas mensagens + caixa).
+  const endRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ block: "end" });
+  }, [messages.length, busy, suggestion]);
 
   async function send(text?: string) {
     const t = (text ?? input).trim();
@@ -93,6 +99,7 @@ export function Conversar() {
         <input placeholder="Pergunte ou peça algo…" value={input} onChange={(e) => setInput(e.target.value)} />
         <button type="submit" disabled={busy}>{busy ? "…" : "Enviar"}</button>
       </form>
+      <div ref={endRef} aria-hidden />
     </>
   );
 }
