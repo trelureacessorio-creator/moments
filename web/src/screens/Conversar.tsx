@@ -13,6 +13,7 @@ export function Conversar() {
   const s = useStore();
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  const [pendingUser, setPendingUser] = useState<string | null>(null);
   const [suggestion, setSuggestion] = useState<any | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
 
@@ -26,6 +27,7 @@ export function Conversar() {
     setBusy(true);
     setInput("");
     setFlash(null);
+    setPendingUser(t); // mostra sua mensagem na hora
     try {
       const r = await api.aiMessage(t);
       await pull(); // traz as mensagens persistidas
@@ -34,6 +36,7 @@ export function Conversar() {
       setFlash("Não foi possível falar com o assistente agora.");
     } finally {
       setBusy(false);
+      setPendingUser(null);
     }
   }
 
@@ -59,6 +62,12 @@ export function Conversar() {
         {messages.map((m) => (
           <div className={"msg " + (m.role === "user" ? "me" : "bot")} key={m.id}>{m.text}</div>
         ))}
+        {busy && pendingUser && <div className="msg me">{pendingUser}</div>}
+        {busy && (
+          <div className="msg bot typing" aria-label="digitando">
+            <span /><span /><span />
+          </div>
+        )}
       </div>
 
       {suggestion && (
