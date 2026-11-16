@@ -1,4 +1,5 @@
 import { prisma } from "../db";
+import { isClaudeEnabled, claudeChat, claudeDiary } from "./claude";
 
 // Motor de inteligência do Moments (Fase 3).
 // - Responde perguntas APENAS a partir dos dados do próprio usuário (fundamentado).
@@ -120,7 +121,8 @@ export async function analyzeDiaryFull(userId: string, text: string, now: Date =
   const pref = await prisma.preference.findUnique({ where: { ownerId: userId } });
   const tz = pref?.timezone || "America/Sao_Paulo";
   const { date: today } = localParts(now, tz);
-  const base = analyzeDiary(text);
+  // Título/resumo/sentimento: tenta o Claude; se indisponível ou falhar, usa o motor local.
+  const base = (isClaudeEnabled() ? await claudeDiary(text) : null) ?? analyzeDiary(text);
   // Extrai a sugestão da FRASE que contém o gatilho (não do relato inteiro),
   // para o título ficar limpo (ex.: "Consulta no dentista").
   let suggestion;
@@ -129,6 +131,35 @@ export async function analyzeDiaryFull(userId: string, text: string, now: Date =
     if (s) { suggestion = s; break; }
   }
   return { ...base, suggestion };
+}
+
+// ---------- contexto fundamentado para o Claude ----------
+// Monta um resumo compacto e REAL dos dados do usuário (nunca dados de terceiros),
+// para o modelo responder com base nisso e jamais inventar.
+async function buildUserContext(userId: string, today: string): Promise<string> {
+  const monthStart = today.slice(0, 8) + "01";
+  const tomorrow = addDaysIso(today, 1);
+  const [appts, tasks, goals, savings, diary] = await Promise.all([
+    prisma.appointment.findMany({ where: { ownerId: userId, deletedAt: null, status: { not: "done" }, date: { gte: today } }, orderBy: [{ date: "asc" }, { time: "asc" }], take: 5 }),
+    prisma.task.findMany({ where: { ownerId: userId, deletedAt: null, done: false, date: { in: [today, tomorrow] } }, take: 10 }),
+    prisma.goal.findMany({ where: { ownerId: userId, deletedAt: null, status: { not: "done" } }, take: 8 }),
+    prisma.financeNote.findMany({ where: { ownerId: userId, type: "economia", deletedAt: null, date: { gte: monthStart } } }),
+    prisma.diaryEntry.findMany({ where: { ownerId: userId, deletedAt: null, mood: { not: null } }, orderBy: { date: "desc" }, take: 5 }),
+  ]);
+  const L: string[] = [`Hoje é ${today}.`];
+  L.push(appts.length
+    ? "Próximos compromissos: " + appts.map((a) => `${a.title} (${relDate(a.date, today)} às ${a.time}${a.place ? ", " + a.place : ""})`).join("; ") + "."
+    : "Sem compromissos futuros registrados.");
+  L.push(tasks.length
+    ? "Tarefas pendentes (hoje/amanhã): " + tasks.map((t) => t.text).join("; ") + "."
+    : "Sem tarefas pendentes para hoje ou amanhã.");
+  L.push(goals.length
+    ? "Metas em andamento: " + goals.map((g) => `${g.name}${g.targetValue != null ? ` (${Math.round((g.currentValue / (g.targetValue as number)) * 100)}%)` : ""}`).join("; ") + "."
+    : "Sem metas em andamento.");
+  const totalSaved = savings.reduce((a, n) => a + n.amount, 0);
+  L.push(totalSaved > 0 ? `Economias registradas neste mês: ${brMoney(totalSaved)}.` : "Sem economias registradas neste mês.");
+  if (diary.length) L.push("Sentimentos recentes no diário: " + diary.map((d) => d.mood).join(", ") + ".");
+  return L.join("\n");
 }
 
 // ---------- respostas fundamentadas (busca nos dados do usuário) ----------
@@ -190,6 +221,13 @@ export async function interpret(userId: string, text: string, now: Date = new Da
     return { reply: "Estou aqui para ajudar. Posso ver seus compromissos, tarefas, metas e economias — ou registrar algo (é só pedir)." };
   }
 
-  // fundamentado: quando não encontra, é honesto
-  return { reply: "Ainda não encontrei isso nas suas informações. Posso ajudar com compromissos, tarefas, metas ou economias — ou peça para eu anotar algo (ex.: \"marque dentista amanhã às 9h\")." };
+  // Sem correspondência exata: se o Claude estiver ativo, responde fundamentado nos
+  // dados do usuário; caso contrário (ou em falha), a resposta honesta do motor local.
+  const fallback = "Ainda não encontrei isso nas suas informações. Posso ajudar com compromissos, tarefas, metas ou economias — ou peça para eu anotar algo (ex.: \"marque dentista amanhã às 9h\").";
+  if (isClaudeEnabled()) {
+    const ctx = await buildUserContext(userId, today);
+    const reply = await claudeChat(ctx, text);
+    if (reply) return { reply };
+  }
+  return { reply: fallback };
 }

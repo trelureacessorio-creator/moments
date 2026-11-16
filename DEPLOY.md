@@ -114,9 +114,21 @@ e troque o `CMD` da API por apenas `node dist/index.js`.
 | 14 | IA não altera sem confirmar | `tests/ai.test.ts` (sugestão não cria nada) |
 | 15 | Retrospectivas só com dados existentes | App web (Minha Evolução) calcula dos dados |
 
+## IA com Claude (opcional, já integrada)
+
+O assistente funciona sem nenhuma chave (motor determinístico, grátis). Para respostas
+de conversa mais naturais e uma análise de diário melhor, defina na **moments-api**:
+
+- `ANTHROPIC_API_KEY` = sua chave da Anthropic (console.anthropic.com).
+- `ANTHROPIC_MODEL` (opcional) = `claude-haiku-5-5` para custo baixo (padrão: `claude-opus-5-5`).
+- `ANTHROPIC_EFFORT` (opcional) = `low` | `medium` | `high` (padrão: `low`).
+
+Garantias: o Claude só vê um **resumo dos dados do próprio usuário** (fundamentado) e
+**nunca cria nem altera** registros — toda escrita continua sendo uma sugestão que o
+usuário confirma no app. Se a chave faltar ou a API falhar, cai no motor determinístico.
+Tem custo por uso (cobrado pela Anthropic); comece com `claude-haiku-5-5` para gastar pouco.
+
 ## Pendente para versões seguintes
 
 - **Arquivos (upload real)**: armazenamento de objetos (S3/R2) com URLs assinadas.
 - **Voz**: captura de áudio + transcrição (serviço externo com chave).
-- **IA com Claude**: trocar o motor determinístico pelo provedor Claude quando houver
-  `ANTHROPIC_API_KEY` (o ponto de troca está em `src/ai/engine.ts`).
