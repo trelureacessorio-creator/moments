@@ -1,5 +1,7 @@
 import Fastify, { type FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
+import helmet from "@fastify/helmet";
+import rateLimit from "@fastify/rate-limit";
 import { ZodError } from "zod";
 import { authRoutes } from "./auth/routes";
 import { syncRoutes } from "./sync/routes";
@@ -9,7 +11,21 @@ import { devRoutes } from "./dev/routes";
 import { env } from "./env";
 
 export function buildServer(): FastifyInstance {
-  const app = Fastify({ logger: false });
+  // trustProxy: atrás do Render/Fly o IP real vem no X-Forwarded-For.
+  // Sem isso, o rate limit trataria todo mundo como o mesmo IP (o do proxy).
+  const app = Fastify({ logger: false, trustProxy: true });
+
+  // Cabeçalhos de segurança (HSTS, nosniff, no-referrer, etc.).
+  app.register(helmet, { contentSecurityPolicy: false });
+
+  // Limite global generoso: barra abuso sem atrapalhar o uso normal.
+  // Rotas sensíveis (login/cadastro) têm um limite próprio, mais apertado.
+  app.register(rateLimit, {
+    global: true,
+    max: 300,
+    timeWindow: "1 minute",
+    allowList: () => env.NODE_ENV !== "production", // sem limite em dev/testes
+  });
 
   const origins = env.CORS_ORIGIN.split(",").map((o) => o.trim()).filter(Boolean);
   app.register(cors, { origin: origins.length ? origins : true });

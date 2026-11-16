@@ -46,8 +46,11 @@ async function createSession(uid: string, deviceName?: string, userAgent?: strin
   };
 }
 
+// Limite apertado para rotas sensíveis a abuso (força bruta / criação em massa).
+const strictLimit = { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } };
+
 export async function authRoutes(app: FastifyInstance) {
-  app.post("/auth/register", async (req, reply) => {
+  app.post("/auth/register", strictLimit, async (req, reply) => {
     const body = registerSchema.parse(req.body);
     const email = body.email.toLowerCase();
     const exists = await prisma.user.findUnique({ where: { email } });
@@ -64,7 +67,7 @@ export async function authRoutes(app: FastifyInstance) {
     return reply.code(201).send({ user: publicUser(user), ...tokens });
   });
 
-  app.post("/auth/login", async (req, reply) => {
+  app.post("/auth/login", strictLimit, async (req, reply) => {
     const body = loginSchema.parse(req.body);
     const email = body.email.toLowerCase();
     const user = await prisma.user.findUnique({ where: { email } });
@@ -76,7 +79,7 @@ export async function authRoutes(app: FastifyInstance) {
     return reply.send({ user: publicUser(user), ...tokens });
   });
 
-  app.post("/auth/refresh", async (req, reply) => {
+  app.post("/auth/refresh", strictLimit, async (req, reply) => {
     const { refreshToken } = z.object({ refreshToken: z.string() }).parse(req.body);
     const parsed = parseRefreshToken(refreshToken);
     if (!parsed) return reply.code(401).send({ error: "invalid_token" });
