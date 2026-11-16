@@ -10,6 +10,7 @@ const ITEMS: { id: string; ic: string; name: string; desc: string }[] = [
   { id: "tarefas", ic: "✓", name: "Tarefas", desc: "pendentes e concluídas" },
   { id: "notificacoes", ic: "◔", name: "Avisos", desc: "lembretes e alertas" },
   { id: "configuracoes", ic: "⚙", name: "Configurações", desc: "perfil, avisos e dispositivos" },
+  { id: "privacidade", ic: "🔒", name: "Privacidade", desc: "como seus dados são tratados" },
 ];
 
 export function Mais({ go }: { go: (tab: string) => void }) {

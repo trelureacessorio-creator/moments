@@ -98,6 +98,7 @@ model Preference {
   sunday    String?
   timezone  String    @default("America/Sao_Paulo")
   notifOn   Boolean   @default(true)
+  aiEnabled Boolean   @default(true)
   rev       Int       @default(0)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt

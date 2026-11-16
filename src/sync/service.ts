@@ -1,5 +1,6 @@
 import { prisma, nextRev } from "../db";
 import { registry, collectionNames } from "./registry";
+import { encryptField, decryptField } from "../crypto/fields";
 
 type Row = Record<string, any>;
 
@@ -51,6 +52,13 @@ export async function pull(uid: string, cursor: number, only?: string[]) {
     for (const r of [...owned, ...shared]) byId.set(r.id, r);
     const rows = [...byId.values()];
     if (rows.length) {
+      // Decifra os campos criptografados antes de enviar ao cliente.
+      const enc = registry[name].encrypted;
+      if (enc?.length) {
+        for (const r of rows) {
+          for (const f of enc) if (typeof r[f] === "string") r[f] = await decryptField(r[f]);
+        }
+      }
       changes[name] = rows;
       for (const r of rows) if (r.rev > maxRev) maxRev = r.rev;
     }
@@ -96,9 +104,16 @@ export async function push(
           continue;
         }
 
-        const fields = cfg.schema.parse(
+        const fields: Row = cfg.schema.parse(
           Object.fromEntries(Object.entries(rawFields).filter(([k]) => !SYSTEM_FIELDS.has(k)))
         );
+
+        // Cifra os campos sensíveis antes de salvar (texto puro nunca toca o banco).
+        if (cfg.encrypted?.length) {
+          for (const f of cfg.encrypted) {
+            if (typeof fields[f] === "string") fields[f] = await encryptField(fields[f]);
+          }
+        }
 
         const existing: Row | null = await delegate.findUnique({ where: { id } });
 

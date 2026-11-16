@@ -190,6 +190,14 @@ body.chat-mode main { padding: 0; height: calc(100vh - 55px - 61px); height: cal
 .cfg-avatar { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; flex: none; border: 1px solid var(--line); }
 .cfg-avatar-ph { display: inline-flex; align-items: center; justify-content: center; font-family: var(--display); font-weight: 600; font-size: 26px; color: #fff; background: radial-gradient(circle at 32% 30%, var(--warm), var(--accent)); border: none; }
 .cfg-avatar-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+/* política de privacidade */
+.policy { font-size: 14px; line-height: 1.55; color: var(--fg); }
+.policy h4 { font-family: var(--display); font-size: 15px; margin: 14px 0 4px; }
+.policy p { margin: 0 0 6px; color: var(--muted); }
+.policy b { color: var(--fg); }
+.policy-foot { font-size: 12.5px; margin-top: 12px; }
+.auth-policy { text-align: center; font-size: 12.5px; color: var(--muted); margin-top: 14px; }
+.linklike { background: none; border: none; color: var(--accent); font: inherit; padding: 0; text-decoration: underline; cursor: pointer; }
 /* seletor segmentado (ex.: tema) */
 .seg { display: flex; gap: 6px; background: var(--surface-2); padding: 4px; border-radius: 12px; }
 .seg-btn { flex: 1; border: none; background: transparent; color: var(--muted); font-size: 13.5px; font-weight: 500; padding: 9px 0; border-radius: 9px; }

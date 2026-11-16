@@ -15,6 +15,8 @@ export async function aiRoutes(app: FastifyInstance) {
   // multipart (campo "file"). Não cria nada: devolve só o texto para o cliente usar.
   app.post("/ai/transcribe", { preHandler: requireAuth }, async (req, reply) => {
     if (!isGroqEnabled()) return reply.code(503).send({ error: "ai_disabled" });
+    const pref = await prisma.preference.findUnique({ where: { ownerId: userId(req) }, select: { aiEnabled: true } });
+    if (pref?.aiEnabled === false) return reply.code(403).send({ error: "ai_off" });
     const file = await (req as any).file();
     if (!file) return reply.code(400).send({ error: "no_file" });
     const buf = await file.toBuffer();

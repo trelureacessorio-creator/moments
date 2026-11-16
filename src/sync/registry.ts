@@ -10,6 +10,7 @@ import { z } from "zod";
 export interface CollectionConfig {
   delegate: string;
   schema: z.ZodObject<any>;
+  encrypted?: string[]; // campos criptografados em repouso (cifrados no push, decifrados no pull)
 }
 
 const str = z.string();
@@ -27,6 +28,7 @@ export const registry: Record<string, CollectionConfig> = {
       sunday: str.nullable(),
       timezone: str,
       notifOn: bool,
+      aiEnabled: bool,
     }).partial(),
   },
   appointments: {
@@ -136,6 +138,8 @@ export const registry: Record<string, CollectionConfig> = {
   },
   diary: {
     delegate: "diaryEntry",
+    // O relato (text) é criptografado em repouso — nem o banco guarda em texto puro.
+    encrypted: ["text"],
     schema: z.object({
       date: str,
       time: str,

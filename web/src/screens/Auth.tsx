@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { doLogin, doRegister } from "../lib/store";
+import { PoliticaConteudo } from "./Privacidade";
 
 export function Auth() {
   const [mode, setMode] = useState<"login" | "register">("login");
+  const [showPolicy, setShowPolicy] = useState(false);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
@@ -55,6 +57,21 @@ export function Auth() {
           {busy ? "Entrando…" : mode === "register" ? "Criar conta" : "Entrar"}
         </button>
       </form>
+
+      {mode === "register" && (
+        <p className="auth-policy">Ao criar a conta, você concorda com a{" "}
+          <button type="button" className="linklike" onClick={() => setShowPolicy(true)}>Política de Privacidade</button>.
+        </p>
+      )}
+
+      {showPolicy && (
+        <div className="overlay" onClick={() => setShowPolicy(false)}>
+          <div className="sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="sheet-head"><h3>🔒 Política de Privacidade</h3><button className="chip-btn" onClick={() => setShowPolicy(false)}>Fechar</button></div>
+            <PoliticaConteudo />
+          </div>
+        </div>
+      )}
 
       <div className="auth-switch">
         {mode === "login" ? (

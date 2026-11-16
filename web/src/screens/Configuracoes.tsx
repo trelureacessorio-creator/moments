@@ -25,6 +25,7 @@ function readAndResize(file: File, max = 256): Promise<string> {
 }
 import { getTheme, applyTheme, type Theme } from "../lib/theme";
 import { pushSupported, isStandalone, pushStatus, enablePush, disablePush, syncSubscription, diagnoseAndTest, type PushState } from "../lib/push";
+import { PoliticaConteudo } from "./Privacidade";
 
 const TIMEZONES = [
   "America/Sao_Paulo", "America/Bahia", "America/Fortaleza", "America/Recife",
@@ -70,6 +71,7 @@ export function Configuracoes({ onBack }: { onBack: () => void }) {
   const [confPwd, setConfPwd] = useState("");
   const [pwdBusy, setPwdBusy] = useState(false);
   const [pwdMsg, setPwdMsg] = useState<string | null>(null);
+  const [showPolicy, setShowPolicy] = useState(false);
 
   function chooseTheme(t: Theme) { setTheme(t); applyTheme(t); }
 
@@ -319,6 +321,18 @@ export function Configuracoes({ onBack }: { onBack: () => void }) {
         </div>
       </section>
 
+      {/* Privacidade e IA */}
+      <section>
+        <div className="card pad">
+          <div className="cfg-h">Privacidade e IA</div>
+          <label className="cfg-row">
+            <span className="cfg-lbl">Usar o assistente de IA<br /><small className="cfg-note">Ao desligar, nada é enviado a provedores externos (a voz fica indisponível e o assistente usa um modo simples).</small></span>
+            <input type="checkbox" className="sw" checked={pref?.aiEnabled !== false} disabled={!pref} onChange={(e) => set("aiEnabled", e.target.checked)} />
+          </label>
+          <button className="btn ghost" style={{ width: "100%", marginTop: 6 }} onClick={() => setShowPolicy(true)}>Ler Política de Privacidade</button>
+        </div>
+      </section>
+
       {/* Prioridades da vida */}
       <section>
         <div className="card pad">
@@ -361,6 +375,15 @@ export function Configuracoes({ onBack }: { onBack: () => void }) {
         <button className="btn ghost" style={{ width: "100%" }} onClick={() => doLogout()}>Sair da conta</button>
         <p className="cfg-note" style={{ textAlign: "center", marginTop: 10 }}>Moments — seus momentos, organizados com você.</p>
       </section>
+
+      {showPolicy && (
+        <div className="overlay" onClick={() => setShowPolicy(false)}>
+          <div className="sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="sheet-head"><h3>🔒 Política de Privacidade</h3><button className="chip-btn" onClick={() => setShowPolicy(false)}>Fechar</button></div>
+            <PoliticaConteudo />
+          </div>
+        </div>
+      )}
     </>
   );
 }

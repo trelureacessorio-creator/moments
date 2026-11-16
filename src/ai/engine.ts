@@ -121,8 +121,9 @@ export async function analyzeDiaryFull(userId: string, text: string, now: Date =
   const pref = await prisma.preference.findUnique({ where: { ownerId: userId } });
   const tz = pref?.timezone || "America/Sao_Paulo";
   const { date: today } = localParts(now, tz);
-  // Título/resumo/sentimento: tenta a IA (Groq); se indisponível ou falhar, usa o motor local.
-  const base = (aiEnabled() ? await aiDiary(text) : null) ?? analyzeDiary(text);
+  // Título/resumo/sentimento: tenta a IA (Groq) se o usuário permitir; senão, motor local.
+  const useAi = aiEnabled() && pref?.aiEnabled !== false;
+  const base = (useAi ? await aiDiary(text) : null) ?? analyzeDiary(text);
   // Extrai a sugestão da FRASE que contém o gatilho (não do relato inteiro),
   // para o título ficar limpo (ex.: "Consulta no dentista").
   let suggestion;
@@ -224,7 +225,7 @@ export async function interpret(userId: string, text: string, now: Date = new Da
   // Sem correspondência exata: se a IA estiver ativa, responde fundamentado nos
   // dados do usuário; caso contrário (ou em falha), a resposta honesta do motor local.
   const fallback = "Ainda não encontrei isso nas suas informações. Posso ajudar com compromissos, tarefas, metas ou economias — ou peça para eu anotar algo (ex.: \"marque dentista amanhã às 9h\").";
-  if (aiEnabled()) {
+  if (aiEnabled() && pref?.aiEnabled !== false) {
     const ctx = await buildUserContext(userId, today);
     const reply = await aiChat(ctx, text);
     if (reply) return { reply };
