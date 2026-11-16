@@ -9,6 +9,7 @@
   --body: "Inter", system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
   color-scheme: light;
 }
+/* Paleta escura: aplicada pelo sistema (quando não forçado claro) OU forçada com data-theme="dark". */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --app-bg: #0e0d0b; --bg: #161410; --surface: #201d18; --surface-2: #2a2620;
@@ -18,6 +19,14 @@
     --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .35);
     color-scheme: dark;
   }
+}
+:root[data-theme="dark"] {
+  --app-bg: #0e0d0b; --bg: #161410; --surface: #201d18; --surface-2: #2a2620;
+  --fg: #f2ece0; --muted: #a79c8b; --faint: #7c7262; --line: #322d25;
+  --accent: #9aa2f2; --accent-soft: #272a4a; --warm: #e0a458; --warm-soft: #38301f;
+  --good: #5fb98a; --good-soft: #1e3429; --warn: #d7a24c; --crit: #e07e63; --crit-soft: #3a271f;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 8px 24px rgba(0, 0, 0, .35);
+  color-scheme: dark;
 }
 * { box-sizing: border-box; }
 html, body, #root { height: 100%; }
@@ -163,6 +172,10 @@ body.chat-mode main { padding: 0; height: calc(100vh - 55px - 61px); height: cal
 .cfg-note { font-size: 12px; color: var(--muted); margin-top: 6px; }
 .cfg-row input[type="time"], .cfg-row select { border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 9px; padding: 7px 9px; font-size: 14px; }
 .sw { width: 20px; height: 20px; accent-color: var(--accent); }
+/* seletor segmentado (ex.: tema) */
+.seg { display: flex; gap: 6px; background: var(--surface-2); padding: 4px; border-radius: 12px; }
+.seg-btn { flex: 1; border: none; background: transparent; color: var(--muted); font-size: 13.5px; font-weight: 500; padding: 9px 0; border-radius: 9px; }
+.seg-btn.on { background: var(--surface); color: var(--fg); box-shadow: var(--shadow); }
 .chat { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
 .msg { max-width: 85%; padding: 10px 13px; border-radius: 16px; font-size: 14px; line-height: 1.45; white-space: pre-wrap; }
 .msg.me { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 5px; }

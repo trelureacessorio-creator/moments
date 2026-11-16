@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useStore, list, updateRecord, pull, doLogout } from "../lib/store";
 import { api } from "../lib/api";
+import { getTheme, applyTheme, type Theme } from "../lib/theme";
 
 const TIMEZONES = [
   "America/Sao_Paulo", "America/Bahia", "America/Fortaleza", "America/Recife",
@@ -29,6 +30,9 @@ export function Configuracoes({ onBack }: { onBack: () => void }) {
   const pref: any = list(s.data, "preferences")[0];
   const [sessions, setSessions] = useState<Sess[] | null>(null);
   const [newPriority, setNewPriority] = useState("");
+  const [theme, setTheme] = useState<Theme>(getTheme());
+
+  function chooseTheme(t: Theme) { setTheme(t); applyTheme(t); }
 
   useEffect(() => { if (!pref) pull().catch(() => {}); }, [pref]);
   useEffect(() => { api.sessions().then((r) => setSessions(r.sessions)).catch(() => setSessions([])); }, []);
@@ -67,6 +71,19 @@ export function Configuracoes({ onBack }: { onBack: () => void }) {
           <div className="cfg-h">Perfil</div>
           <div className="cfg-row"><span className="cfg-lbl">Nome</span><span className="cfg-val">{s.user?.name}</span></div>
           <div className="cfg-row"><span className="cfg-lbl">E-mail</span><span className="cfg-val">{s.user?.email}</span></div>
+        </div>
+      </section>
+
+      {/* Aparência */}
+      <section>
+        <div className="card pad">
+          <div className="cfg-h">Aparência</div>
+          <div className="seg">
+            {([["light", "Claro"], ["dark", "Escuro"], ["system", "Sistema"]] as [Theme, string][]).map(([v, lbl]) => (
+              <button key={v} className={"seg-btn" + (theme === v ? " on" : "")} onClick={() => chooseTheme(v)}>{lbl}</button>
+            ))}
+          </div>
+          <p className="cfg-note">“Sistema” acompanha o tema do seu aparelho automaticamente.</p>
         </div>
       </section>
 

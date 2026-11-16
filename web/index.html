@@ -10,6 +10,13 @@
       href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap"
     />
     <title>Moments</title>
+    <script>
+      // Aplica o tema salvo antes de pintar a tela (evita "flash" de cor errada).
+      try {
+        var t = localStorage.getItem("moments_theme");
+        if (t === "light" || t === "dark") document.documentElement.setAttribute("data-theme", t);
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>
