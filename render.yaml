@@ -1,0 +1,35 @@
+# Blueprint do Render (grátis) — sobe a API (Docker) e o app web (estático).
+# Banco: use o Neon (Postgres grátis) e cole a connection string em DATABASE_URL.
+# Passo a passo no DEPLOY.md (seção "Deploy grátis: Neon + Render").
+services:
+  - type: web
+    name: moments-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: DATABASE_URL        # cole a URL do Neon (inclua ?sslmode=require)
+        sync: false
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      - key: CORS_ORIGIN         # a URL pública do moments-web (defina após o 1º deploy)
+        sync: false
+      - key: NODE_ENV
+        value: production
+
+  - type: web
+    name: moments-web
+    runtime: static
+    buildCommand: cd web && npm ci && npm run build
+    staticPublishPath: web/dist
+    pullRequestPreviewsEnabled: false
+    envVars:
+      - key: VITE_API_URL        # a URL pública da moments-api (defina após o 1º deploy)
+        sync: false
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

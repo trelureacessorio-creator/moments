@@ -25,7 +25,44 @@ docker compose -f docker-compose.prod.yml up -d --build
 > `docker-compose.prod.yml` é uma referência para um host único. Em produção séria,
 > prefira a API e o banco em serviços gerenciados e o web em uma CDN/host estático.
 
-## Deploy em plataforma gerenciada (recomendado)
+## Deploy grátis: Neon + Render (recomendado, sem cartão)
+
+Banco no **Neon** (Postgres grátis) e API + Web no **Render** (plano free). O
+`render.yaml` na raiz já descreve os dois serviços.
+
+1. **Banco (Neon)**
+   - Crie uma conta em neon.tech → novo projeto Postgres.
+   - Copie a **connection string** (algo como
+     `postgresql://usuario:senha@host.neon.tech/neondb?sslmode=require`).
+
+2. **Render (API + Web)**
+   - Em render.com → **New → Blueprint** → conecte o repositório
+     `trelureacessorio-creator/moments`. O Render lê o `render.yaml`.
+   - Em **moments-api**, defina as variáveis marcadas `sync: false`:
+     - `DATABASE_URL` = a string do Neon (mantenha `?sslmode=require`),
+     - `CORS_ORIGIN` = a URL do **moments-web** (preencha depois do 1º deploy).
+     - `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` são geradas automaticamente.
+   - Em **moments-web**, defina `VITE_API_URL` = a URL da **moments-api**.
+   - Faça o deploy. Depois que as duas URLs existirem, volte e ajuste `CORS_ORIGIN`
+     (na API) e `VITE_API_URL` (no web) com as URLs reais e **refaça o deploy** de
+     cada uma.
+
+> Limite do plano free do Render: a API **suspende após ~15 min** de inatividade
+> (a 1ª chamada seguinte tem *cold start*). O Moments contorna isso gerando os avisos
+> também no `/sync/pull` — quando a pessoa abre o app, a API acorda e cria os avisos.
+> Para a API ficar **sempre ligada**, use o Fly.io (abaixo) ou um ping periódico
+> (ex.: um cron externo chamando `/health` a cada 10 min).
+
+## Alternativa sempre ligada: Neon + Fly.io (API) + Cloudflare Pages (web)
+
+- **API (Fly.io)**: `fly launch` na raiz (usa o `Dockerfile`), defina os secrets
+  (`fly secrets set JWT_ACCESS_SECRET=... JWT_REFRESH_SECRET=... DATABASE_URL=... CORS_ORIGIN=...`).
+  O plano free mantém uma VM pequena ligada (exige cartão para verificação, sem cobrança
+  dentro do free).
+- **Web (Cloudflare Pages / Vercel)**: conecte o repositório, defina o diretório do
+  app como `web`, build `npm run build`, saída `web/dist`, variável `VITE_API_URL`.
+
+## Deploy em plataforma gerenciada (geral)
 
 1. **Banco**: crie um PostgreSQL gerenciado e copie a `DATABASE_URL`.
 2. **API**: faça deploy da imagem do `Dockerfile` (Fly.io, Railway, Render, ECS…). Defina:
