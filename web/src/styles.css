@@ -167,9 +167,9 @@ nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: va
 .composer input:focus { border-color: var(--accent); }
 .composer button { border: none; background: var(--accent); color: #fff; border-radius: 12px; font-weight: 600; font-size: 14px; padding: 0 16px; }
 .composer button:disabled { opacity: .5; }
-/* microfone (voz) — estilo WhatsApp: botão circular */
-.mic { border: none; background: #25d366; color: #fff; border-radius: 50%; width: 46px; height: 46px; flex: none; padding: 0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: background .15s, transform .1s; }
-.mic:hover { background: #1fb959; }
+/* microfone (voz) — botão circular roxo (cor do app) */
+.mic { border: none; background: var(--accent); color: #fff; border-radius: 50%; width: 46px; height: 46px; flex: none; padding: 0; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: filter .15s, transform .1s; }
+.mic:hover { filter: brightness(.92); }
 .mic:active { transform: scale(.94); }
 .mic.on { background: #e5484d; animation: mic-pulse 1.3s infinite; }
 .mic:disabled { opacity: .55; cursor: default; }
