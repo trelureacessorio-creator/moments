@@ -36,6 +36,12 @@ export async function pushStatus(): Promise<PushState> {
   } catch { return "off"; }
 }
 
+function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+  return true;
+}
+
 export async function enablePush(): Promise<PushState | "error"> {
   if (!pushSupported()) return "unsupported";
   const perm = await Notification.requestPermission();
@@ -43,16 +49,34 @@ export async function enablePush(): Promise<PushState | "error"> {
   try {
     const reg = await navigator.serviceWorker.ready;
     const { key } = await api.pushKey();
-    const sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlB64ToUint8Array(key),
-    });
+    const appKey = urlB64ToUint8Array(key);
+    let sub = await reg.pushManager.getSubscription();
+    if (sub) {
+      // Se a chave do servidor mudou, a inscrição antiga não serve: recria.
+      const existing = (sub.options && (sub.options as any).applicationServerKey) as ArrayBuffer | null;
+      const ok = existing ? sameBytes(new Uint8Array(existing), appKey) : false;
+      if (!ok) { await sub.unsubscribe().catch(() => {}); sub = null; }
+    }
+    if (!sub) {
+      sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: appKey });
+    }
     const j: any = sub.toJSON();
     await api.pushSubscribe({ endpoint: sub.endpoint, keys: { p256dh: j.keys.p256dh, auth: j.keys.auth } });
     return "on";
   } catch {
     return "error";
   }
+}
+
+// Re-registra no servidor a inscrição que o navegador já tem (autocorreção silenciosa).
+export async function syncSubscription(): Promise<void> {
+  try {
+    const reg = await navigator.serviceWorker.getRegistration();
+    const sub = reg ? await reg.pushManager.getSubscription() : null;
+    if (!sub) return;
+    const j: any = sub.toJSON();
+    await api.pushSubscribe({ endpoint: sub.endpoint, keys: { p256dh: j.keys.p256dh, auth: j.keys.auth } });
+  } catch { /* ignore */ }
 }
 
 export async function disablePush(): Promise<void> {

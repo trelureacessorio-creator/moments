@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useStore, list, updateRecord, pull, doLogout } from "../lib/store";
 import { api } from "../lib/api";
 import { getTheme, applyTheme, type Theme } from "../lib/theme";
-import { pushSupported, isStandalone, pushStatus, enablePush, disablePush, type PushState } from "../lib/push";
+import { pushSupported, isStandalone, pushStatus, enablePush, disablePush, syncSubscription, type PushState } from "../lib/push";
 
 const TIMEZONES = [
   "America/Sao_Paulo", "America/Bahia", "America/Fortaleza", "America/Recife",
@@ -39,7 +39,12 @@ export function Configuracoes({ onBack }: { onBack: () => void }) {
 
   function chooseTheme(t: Theme) { setTheme(t); applyTheme(t); }
 
-  useEffect(() => { pushStatus().then(setPushSt); }, []);
+  useEffect(() => {
+    pushStatus().then((st) => {
+      setPushSt(st);
+      if (st === "on") syncSubscription(); // garante o registro no servidor
+    });
+  }, []);
 
   async function testPush() {
     setPushBusy(true); setPushMsg(null);
@@ -47,7 +52,17 @@ export function Configuracoes({ onBack }: { onBack: () => void }) {
       await api.pushTest();
       setPushMsg("Enviado! Deve chegar uma notificação em instantes. 🔔");
     } catch {
-      setPushMsg("Não consegui enviar o teste. Verifique se os lembretes estão ativos.");
+      // Autocorreção: re-registra a inscrição e tenta mais uma vez.
+      const r = await enablePush();
+      if (r === "on") {
+        try {
+          await api.pushTest();
+          setPushMsg("Reativado e enviado! Deve chegar em instantes. 🔔");
+          setPushBusy(false);
+          return;
+        } catch { /* cai no aviso abaixo */ }
+      }
+      setPushMsg("Não consegui enviar o teste. Toque em “Desativar” e depois “Ativar” novamente, e tente de novo.");
     } finally {
       setPushBusy(false);
     }
