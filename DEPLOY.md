@@ -124,7 +124,7 @@ de conversa mais naturais e uma análise de diário melhor, defina uma chave na
 
 - Crie a chave em **aistudio.google.com/apikey** (sem cartão; modelos *Flash* têm camada gratuita).
 - Na **moments-api → Environment**, adicione `GEMINI_API_KEY` = sua chave.
-- `GEMINI_MODEL` (opcional) = `gemini-2.0-flash` (padrão) ou `gemini-1.5-flash`.
+- `GEMINI_MODEL` (opcional) = `gemini-3.8-flash` (padrão) ou `gemini-1.5-flash`.
 
 ### Opção paga — Claude (Anthropic)
 

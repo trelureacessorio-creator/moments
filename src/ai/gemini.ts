@@ -4,7 +4,7 @@ import { CHAT_SYSTEM, DIARY_SYSTEM, parseDiaryJson } from "./prompts";
 // Usa a API REST do Google AI (camada gratuita com os modelos Flash). Só gera texto;
 // nunca cria/altera registros. Qualquer falha retorna null (quem chama faz o fallback).
 
-const MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash";
+const MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
 const BASE = "https://generativelanguage.googleapis.com/v1beta/models";
 
 export function isGeminiEnabled(): boolean {
