@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useStore, list, createRecord, pull } from "../lib/store";
 import { api } from "../lib/api";
 import { useRecorder } from "../lib/useRecorder";
+import { MicIcon, StopIcon } from "../lib/icons";
 
 const SUGESTOES = [
   "Qual meu próximo compromisso?",
@@ -109,7 +110,7 @@ export function Conversar() {
             title="Falar"
             aria-label={rec.state === "recording" ? "Parar gravação" : "Gravar voz"}
           >
-            {rec.state === "recording" ? "⏹" : rec.state === "transcribing" ? "…" : "🎤"}
+            {rec.state === "recording" ? <StopIcon /> : rec.state === "transcribing" ? <span className="mic-spin" /> : <MicIcon />}
           </button>
         )}
         <input placeholder="Pergunte ou peça algo…" value={input} onChange={(e) => setInput(e.target.value)} />

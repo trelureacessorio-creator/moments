@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useStore, list, createRecord } from "../lib/store";
 import { api } from "../lib/api";
 import { useRecorder } from "../lib/useRecorder";
+import { MicIcon, StopIcon } from "../lib/icons";
 import { isoToday, nowTime, fmtRel, cap } from "../lib/dates";
 
 const MOODS = ["Alegria", "Gratidão", "Tranquilidade", "Neutro", "Cansaço", "Ansiedade", "Tristeza"];
@@ -95,7 +96,7 @@ function Compose({ onClose }: { onClose: () => void }) {
               disabled={rec.state === "transcribing"}
               aria-label={rec.state === "recording" ? "Parar gravação" : "Gravar voz"}
             >
-              {rec.state === "recording" ? "⏹" : rec.state === "transcribing" ? "…" : "🎤"}
+              {rec.state === "recording" ? <StopIcon /> : rec.state === "transcribing" ? <span className="mic-spin" /> : <MicIcon />}
             </button>
             <span className="rec-lbl">
               {rec.state === "recording" ? "Gravando… toque para parar." : rec.state === "transcribing" ? "Transcrevendo…" : "Falar o relato"}
