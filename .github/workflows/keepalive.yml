@@ -5,9 +5,12 @@ name: Keep API awake
 # A URL pode ser trocada por uma variável de repositório PING_URL (Settings → Actions
 # → Variables), senão usa a URL padrão abaixo.
 
+# Agendamento automático desativado: usamos um pinger externo (cron-job.org), mais
+# confiável e sem depender dos runners do GitHub. Para reativar no futuro (conta já
+# liberada para Actions), descomente o bloco "schedule" abaixo.
 on:
-  schedule:
-    - cron: "*/10 * * * *"
+  # schedule:
+  #   - cron: "*/10 * * * *"
   workflow_dispatch: {}
 
 jobs:
