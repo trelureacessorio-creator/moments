@@ -134,6 +134,15 @@ export const api = {
   activity() {
     return request<{ activity: any[] }>("/shares/activity");
   },
+  shares() {
+    return request<{ created: any[]; received: any[] }>("/shares");
+  },
+  createShare(p: { recipientEmail: string; entityType: string; entityId: string; permission: string }) {
+    return request("/shares", { method: "POST", body: JSON.stringify(p) });
+  },
+  deleteShare(id: string) {
+    return request(`/shares/${id}`, { method: "DELETE" });
+  },
   aiMessage(text: string) {
     return request<{ reply: string; suggestion?: any }>("/ai/message", {
       method: "POST",
