@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useStore, list, updateRecord, pull, doLogout } from "../lib/store";
 import { api } from "../lib/api";
 import { getTheme, applyTheme, type Theme } from "../lib/theme";
-import { pushSupported, isStandalone, pushStatus, enablePush, disablePush, syncSubscription, type PushState } from "../lib/push";
+import { pushSupported, isStandalone, pushStatus, enablePush, disablePush, syncSubscription, diagnoseAndTest, type PushState } from "../lib/push";
 
 const TIMEZONES = [
   "America/Sao_Paulo", "America/Bahia", "America/Fortaleza", "America/Recife",
@@ -49,20 +49,9 @@ export function Configuracoes({ onBack }: { onBack: () => void }) {
   async function testPush() {
     setPushBusy(true); setPushMsg(null);
     try {
-      await api.pushTest();
-      setPushMsg("Enviado! Deve chegar uma notificação em instantes. 🔔");
-    } catch {
-      // Autocorreção: re-registra a inscrição e tenta mais uma vez.
-      const r = await enablePush();
-      if (r === "on") {
-        try {
-          await api.pushTest();
-          setPushMsg("Reativado e enviado! Deve chegar em instantes. 🔔");
-          setPushBusy(false);
-          return;
-        } catch { /* cai no aviso abaixo */ }
-      }
-      setPushMsg("Não consegui enviar o teste. Toque em “Desativar” e depois “Ativar” novamente, e tente de novo.");
+      const msg = await diagnoseAndTest();
+      setPushMsg(msg);
+      setPushSt(await pushStatus());
     } finally {
       setPushBusy(false);
     }

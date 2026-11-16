@@ -68,6 +68,43 @@ export async function enablePush(): Promise<PushState | "error"> {
   }
 }
 
+// Diagnóstico completo + teste: percorre cada passo e devolve onde falhou (texto claro).
+export async function diagnoseAndTest(): Promise<string> {
+  if (!pushSupported()) return "Este navegador/app não suporta notificações push.";
+  if (typeof Notification !== "undefined" && Notification.permission === "denied") {
+    return "As notificações estão BLOQUEADAS. Vá em Ajustes do iPhone → Moments → Notificações e permita.";
+  }
+  try {
+    if (Notification.permission !== "granted") {
+      const perm = await Notification.requestPermission();
+      if (perm !== "granted") return "Permissão não concedida (" + perm + ").";
+    }
+    const reg = await navigator.serviceWorker.ready;
+    let key: string;
+    try { key = (await api.pushKey()).key; }
+    catch (e: any) { return "Falha ao obter a chave do servidor (código " + (e?.status || "?") + ")."; }
+    const appKey = urlB64ToUint8Array(key);
+
+    let sub = await reg.pushManager.getSubscription();
+    if (sub) {
+      const existing = (sub.options && (sub.options as any).applicationServerKey) as ArrayBuffer | null;
+      const ok = existing ? sameBytes(new Uint8Array(existing), appKey) : false;
+      if (!ok) { await sub.unsubscribe().catch(() => {}); sub = null; }
+    }
+    if (!sub) {
+      try { sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: appKey }); }
+      catch (e: any) { return "Falha ao criar a inscrição no navegador: " + (e?.message || e) + "."; }
+    }
+    const j: any = sub.toJSON();
+    try { await api.pushSubscribe({ endpoint: sub.endpoint, keys: { p256dh: j.keys.p256dh, auth: j.keys.auth } }); }
+    catch (e: any) { return "Falha ao salvar a inscrição no servidor (código " + (e?.status || "?") + (e?.body?.error ? ", " + e.body.error : "") + ")."; }
+    try { const res = await api.pushTest(); return "Enviado para " + res.devices + " aparelho(s)! Deve chegar em instantes. 🔔"; }
+    catch (e: any) { return "Inscrição salva, mas o envio falhou (código " + (e?.status || "?") + (e?.body?.error ? ", " + e.body.error : "") + ")."; }
+  } catch (e: any) {
+    return "Erro inesperado: " + (e?.message || e) + ".";
+  }
+}
+
 // Re-registra no servidor a inscrição que o navegador já tem (autocorreção silenciosa).
 export async function syncSubscription(): Promise<void> {
   try {
