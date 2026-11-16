@@ -82,26 +82,50 @@ async function generate(system: string, userText: string, gen: GenConfig): Promi
   }
 }
 
-// Diagnóstico: faz uma chamada mínima e devolve o resultado SEM expor a chave.
+// Lista os modelos que ESTA chave pode usar com generateContent (nomes sem "models/").
+async function listModels(): Promise<string[]> {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return [];
+  try {
+    const res = await fetch(`${BASE}?key=${encodeURIComponent(key)}&pageSize=200`, { signal: AbortSignal.timeout(20000) });
+    if (!res.ok) return [];
+    const data: any = await res.json();
+    const list: string[] = [];
+    for (const m of data?.models ?? []) {
+      const methods: string[] = m?.supportedGenerationMethods ?? [];
+      if (methods.includes("generateContent") && typeof m?.name === "string") {
+        list.push(m.name.replace(/^models\//, ""));
+      }
+    }
+    return list;
+  } catch {
+    return [];
+  }
+}
+
+// Diagnóstico completo: lista os modelos da chave e testa um a um os candidatos.
 export async function geminiDiagnose(): Promise<{
-  enabled: boolean; ok: boolean; status: number | null; model: string; tried: string[]; error: string | null;
+  enabled: boolean; ok: boolean; workingModel: string | null; candidates: string[];
+  availableModels: string[]; attempts: { model: string; status: number | null; error: string | null }[];
 }> {
   const key = process.env.GEMINI_API_KEY;
-  if (!key) return { enabled: false, ok: false, status: null, model: MODELS[0], tried: MODELS, error: "GEMINI_API_KEY ausente" };
-  try {
-    const out = await postGemini({ contents: [{ role: "user", parts: [{ text: "ping" }] }], generationConfig: { maxOutputTokens: 5 } });
-    const res = out?.res ?? null;
-    const model = out?.model ?? MODELS[0];
-    if (!res) return { enabled: true, ok: false, status: null, model, tried: MODELS, error: "sem resposta (rede/timeout)" };
-    if (!res.ok) {
-      let body = "";
-      try { body = (await res.text()).slice(0, 300); } catch { /* ignore */ }
-      return { enabled: true, ok: false, status: res.status, model, tried: MODELS, error: body.replace(key, "***") || res.statusText };
-    }
-    return { enabled: true, ok: true, status: 200, model, tried: MODELS, error: null };
-  } catch (e: any) {
-    return { enabled: true, ok: false, status: null, model: MODELS[0], tried: MODELS, error: String(e?.message || e).slice(0, 200) };
+  if (!key) {
+    return { enabled: false, ok: false, workingModel: null, candidates: MODELS, availableModels: [], attempts: [] };
   }
+  const availableModels = await listModels();
+  // Testa os candidatos configurados e, por segurança, os primeiros modelos "flash" da conta.
+  const extra = availableModels.filter((m) => /flash/i.test(m) && !MODELS.includes(m)).slice(0, 4);
+  const toTry = [...MODELS, ...extra];
+  const attempts: { model: string; status: number | null; error: string | null }[] = [];
+  let workingModel: string | null = null;
+  for (const model of toTry) {
+    const res = await postModel(model, { contents: [{ role: "user", parts: [{ text: "ping" }] }], generationConfig: { maxOutputTokens: 5 } });
+    if (!res) { attempts.push({ model, status: null, error: "sem resposta" }); continue; }
+    if (res.ok) { attempts.push({ model, status: 200, error: null }); workingModel = model; break; }
+    let body = ""; try { body = (await res.text()).slice(0, 160); } catch { /* ignore */ }
+    attempts.push({ model, status: res.status, error: body.replace(key, "***").replace(/\s+/g, " ").trim() || null });
+  }
+  return { enabled: true, ok: Boolean(workingModel), workingModel, candidates: MODELS, availableModels, attempts };
 }
 
 export async function geminiChat(contextText: string, userText: string): Promise<string | null> {
