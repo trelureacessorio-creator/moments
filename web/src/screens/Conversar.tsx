@@ -26,8 +26,17 @@ export function Conversar() {
 
   // Ao abrir e a cada nova mensagem, desce para o fim (últimas mensagens + caixa).
   const endRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
+  const toBottom = () => {
+    // Rola a página toda até o fim (a caixa de digitação fica visível embaixo).
+    const h = document.documentElement.scrollHeight;
+    window.scrollTo({ top: h });
     endRef.current?.scrollIntoView({ block: "end" });
+  };
+  useEffect(() => {
+    // Espera o layout montar antes de rolar (evita cair no topo ao abrir a aba).
+    const r = requestAnimationFrame(() => requestAnimationFrame(toBottom));
+    const t = window.setTimeout(toBottom, 120);
+    return () => { cancelAnimationFrame(r); window.clearTimeout(t); };
   }, [messages.length, busy, suggestion]);
 
   async function send(text?: string) {
