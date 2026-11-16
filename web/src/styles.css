@@ -146,6 +146,10 @@ body.chat-mode main { padding: 0; height: calc(100vh - 55px - 61px); height: cal
 .chat-bottom { flex: none; padding: 8px 16px calc(8px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--surface); }
 .chat-bottom .composer { position: static; margin-top: 0; }
 .chat-bottom .sugg, .chat-bottom .flash, .chat-bottom .rec-hint { margin-bottom: 8px; margin-top: 0; }
+/* exemplos de pergunta: faixa única que rola de lado, acima da caixa */
+.chat-bottom .chips { flex-wrap: nowrap; overflow-x: auto; margin: 0 0 8px; padding-bottom: 2px; scrollbar-width: none; }
+.chat-bottom .chips::-webkit-scrollbar { display: none; }
+.chat-bottom .chip { flex: none; white-space: nowrap; }
 .chat { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
 .msg { max-width: 85%; padding: 10px 13px; border-radius: 16px; font-size: 14px; line-height: 1.45; white-space: pre-wrap; }
 .msg.me { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 5px; }

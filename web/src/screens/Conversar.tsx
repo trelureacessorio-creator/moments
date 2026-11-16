@@ -4,6 +4,13 @@ import { api } from "../lib/api";
 import { useRecorder } from "../lib/useRecorder";
 import { MicIcon, StopIcon } from "../lib/icons";
 
+const SUGESTOES = [
+  "Qual meu próximo compromisso?",
+  "Quanto economizei este mês?",
+  "Quanto falta para minha meta?",
+  "Quais tarefas tenho hoje?",
+];
+
 export function Conversar() {
   const s = useStore();
   const [input, setInput] = useState("");
@@ -96,6 +103,14 @@ export function Conversar() {
         {(flash || rec.error) && <div className="flash">{flash || rec.error}</div>}
         {rec.state === "recording" && <div className="rec-hint">● Gravando… toque no microfone para parar.</div>}
         {rec.state === "transcribing" && <div className="rec-hint">Transcrevendo seu áudio…</div>}
+
+        {!suggestion && rec.state === "idle" && (
+          <div className="chips">
+            {SUGESTOES.map((q) => (
+              <button className="chip" key={q} onClick={() => send(q)} disabled={busy}>{q}</button>
+            ))}
+          </div>
+        )}
 
         <form className="composer" onSubmit={(e) => { e.preventDefault(); send(); }}>
           {rec.supported && (
