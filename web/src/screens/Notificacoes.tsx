@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useStore, list, updateRecord } from "../lib/store";
 
 const META: Record<string, { ic: string; soft: string }> = {
@@ -17,6 +18,7 @@ function whenLabel(n: any) {
 
 export function Notificacoes({ onBack }: { onBack?: () => void }) {
   const s = useStore();
+  const [selected, setSelected] = useState<any | null>(null);
   const notes = list(s.data, "notifications")
     .filter((n) => !n.deletedAt)
     .sort((a, b) => String(b.scheduledAt).localeCompare(String(a.scheduledAt)));
@@ -27,6 +29,10 @@ export function Notificacoes({ onBack }: { onBack?: () => void }) {
   }
   function markAll() {
     for (const n of unread) markRead(n.id);
+  }
+  function openDetail(n: any) {
+    setSelected(n);
+    if (n.status !== "read" && !n.readAt) markRead(n.id);
   }
 
   return (
@@ -52,23 +58,35 @@ export function Notificacoes({ onBack }: { onBack?: () => void }) {
               const m = META[n.type] || { ic: "🔔", soft: "var(--surface-2)" };
               const isUnread = n.status !== "read" && !n.readAt;
               return (
-                <div className="row" key={n.id}>
+                <button className="row noti-row" key={n.id} onClick={() => openDetail(n)}>
                   <span className="favatar" style={{ background: m.soft }}>{m.ic}</span>
                   <div className="r-main">
-                    <div className="r-title" style={{ fontWeight: isUnread ? 600 : 500 }}>{n.message}</div>
+                    <div className="r-title noti-clip" style={{ fontWeight: isUnread ? 600 : 500 }}>{n.message}</div>
                     <div className="r-sub">{whenLabel(n)}</div>
                   </div>
-                  {isUnread ? (
-                    <button className="chip-btn" onClick={() => markRead(n.id)}>lida</button>
-                  ) : (
-                    <span className="r-sub" style={{ flex: "none" }}>✓</span>
-                  )}
-                </div>
+                  {isUnread && <span className="noti-dot" aria-label="não lida" />}
+                </button>
               );
             })
           )}
         </div>
       </section>
+
+      {selected && (
+        <div className="overlay" onClick={() => setSelected(null)}>
+          <div className="sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="sheet-head">
+              <h3>{(META[selected.type] || { ic: "🔔" }).ic} Aviso</h3>
+              <button className="chip-btn" onClick={() => setSelected(null)}>Fechar</button>
+            </div>
+            <div className="r-sub" style={{ marginBottom: 10 }}>{whenLabel(selected)}</div>
+            <p className="noti-msg">{selected.message}</p>
+            <div className="sheet-actions">
+              <button className="btn" onClick={() => setSelected(null)}>Entendi</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
