@@ -114,19 +114,28 @@ e troque o `CMD` da API por apenas `node dist/index.js`.
 | 14 | IA não altera sem confirmar | `tests/ai.test.ts` (sugestão não cria nada) |
 | 15 | Retrospectivas só com dados existentes | App web (Minha Evolução) calcula dos dados |
 
-## IA com Claude (opcional, já integrada)
+## IA no assistente e no diário (opcional, já integrada)
 
 O assistente funciona sem nenhuma chave (motor determinístico, grátis). Para respostas
-de conversa mais naturais e uma análise de diário melhor, defina na **moments-api**:
+de conversa mais naturais e uma análise de diário melhor, defina uma chave na
+**moments-api**. A ordem de preferência é **Gemini → Claude → motor local**.
 
-- `ANTHROPIC_API_KEY` = sua chave da Anthropic (console.anthropic.com).
+### Opção grátis — Gemini (Google AI Studio)
+
+- Crie a chave em **aistudio.google.com/apikey** (sem cartão; modelos *Flash* têm camada gratuita).
+- Na **moments-api → Environment**, adicione `GEMINI_API_KEY` = sua chave.
+- `GEMINI_MODEL` (opcional) = `gemini-2.0-flash` (padrão) ou `gemini-1.5-flash`.
+
+### Opção paga — Claude (Anthropic)
+
+- `ANTHROPIC_API_KEY` = sua chave (console.anthropic.com; exige crédito pré-pago).
 - `ANTHROPIC_MODEL` (opcional) = `claude-haiku-5-5` para custo baixo (padrão: `claude-opus-5-5`).
 - `ANTHROPIC_EFFORT` (opcional) = `low` | `medium` | `high` (padrão: `low`).
 
-Garantias: o Claude só vê um **resumo dos dados do próprio usuário** (fundamentado) e
-**nunca cria nem altera** registros — toda escrita continua sendo uma sugestão que o
-usuário confirma no app. Se a chave faltar ou a API falhar, cai no motor determinístico.
-Tem custo por uso (cobrado pela Anthropic); comece com `claude-haiku-5-5` para gastar pouco.
+Garantias (qualquer provedor): a IA só vê um **resumo dos dados do próprio usuário**
+(fundamentado) e **nunca cria nem altera** registros — toda escrita continua sendo uma
+sugestão que o usuário confirma no app. Se a chave faltar ou a API falhar, cai no motor
+determinístico automaticamente.
 
 ## Pendente para versões seguintes
 
