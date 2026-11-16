@@ -41,6 +41,18 @@ export function Configuracoes({ onBack }: { onBack: () => void }) {
 
   useEffect(() => { pushStatus().then(setPushSt); }, []);
 
+  async function testPush() {
+    setPushBusy(true); setPushMsg(null);
+    try {
+      await api.pushTest();
+      setPushMsg("Enviado! Deve chegar uma notificação em instantes. 🔔");
+    } catch {
+      setPushMsg("Não consegui enviar o teste. Verifique se os lembretes estão ativos.");
+    } finally {
+      setPushBusy(false);
+    }
+  }
+
   async function togglePush() {
     setPushBusy(true); setPushMsg(null);
     try {
@@ -120,6 +132,11 @@ export function Configuracoes({ onBack }: { onBack: () => void }) {
               <button className="btn" style={{ marginTop: 10, width: "100%" }} onClick={togglePush} disabled={pushBusy || pushSt === "loading"}>
                 {pushBusy ? "…" : pushSt === "on" ? "Desativar lembretes neste aparelho" : "Ativar lembretes neste aparelho"}
               </button>
+              {pushSt === "on" && (
+                <button className="btn ghost" style={{ marginTop: 8, width: "100%" }} onClick={testPush} disabled={pushBusy}>
+                  Enviar um teste
+                </button>
+              )}
               {pushSt === "denied" && <p className="cfg-note">As notificações estão bloqueadas. Permita o Moments nas configurações do navegador/aparelho.</p>}
             </>
           )}

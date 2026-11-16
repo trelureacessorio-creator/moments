@@ -118,6 +118,9 @@ export const api = {
   pushUnsubscribe(endpoint: string) {
     return request("/push/unsubscribe", { method: "POST", body: JSON.stringify({ endpoint }) });
   },
+  pushTest() {
+    return request<{ ok: boolean; devices: number }>("/push/test", { method: "POST" });
+  },
   deleteSession(id: string) {
     return request(`/auth/sessions/${id}`, { method: "DELETE" });
   },
