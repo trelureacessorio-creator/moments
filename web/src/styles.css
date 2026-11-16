@@ -153,6 +153,16 @@ body.chat-mode main { padding: 0; height: calc(100vh - 55px - 61px); height: cal
 /* escolher arquivo (Arquivos) */
 .file-pick { display: flex; align-items: center; gap: 8px; width: 100%; margin-top: 2px; }
 .file-pick label { cursor: pointer; max-width: 72%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* configurações */
+.card.pad { padding: 14px 16px; }
+.cfg-h { font-family: var(--display); font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+.cfg-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; border-top: 1px solid var(--line); }
+.cfg-row:first-of-type { border-top: none; }
+.cfg-lbl { font-size: 14px; color: var(--fg); }
+.cfg-val { font-size: 14px; color: var(--muted); text-align: right; word-break: break-all; }
+.cfg-note { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.cfg-row input[type="time"], .cfg-row select { border: 1px solid var(--line); background: var(--surface); color: var(--fg); border-radius: 9px; padding: 7px 9px; font-size: 14px; }
+.sw { width: 20px; height: 20px; accent-color: var(--accent); }
 .chat { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
 .msg { max-width: 85%; padding: 10px 13px; border-radius: 16px; font-size: 14px; line-height: 1.45; white-space: pre-wrap; }
 .msg.me { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 5px; }

@@ -106,6 +106,12 @@ export const api = {
     const r = await request<{ user: PublicUser }>("/auth/me");
     return r.user;
   },
+  sessions() {
+    return request<{ sessions: { id: string; deviceName: string | null; userAgent: string | null; createdAt: string; lastUsedAt: string }[] }>("/auth/sessions");
+  },
+  deleteSession(id: string) {
+    return request(`/auth/sessions/${id}`, { method: "DELETE" });
+  },
   async logout() {
     try {
       if (tokens?.refreshToken) {

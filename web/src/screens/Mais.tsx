@@ -9,6 +9,7 @@ const ITEMS: { id: string; ic: string; name: string; desc: string }[] = [
   { id: "arquivos", ic: "▤", name: "Arquivos", desc: "documentos e fotos" },
   { id: "tarefas", ic: "✓", name: "Tarefas", desc: "pendentes e concluídas" },
   { id: "notificacoes", ic: "◔", name: "Avisos", desc: "lembretes e alertas" },
+  { id: "configuracoes", ic: "⚙", name: "Configurações", desc: "perfil, avisos e dispositivos" },
 ];
 
 export function Mais({ go }: { go: (tab: string) => void }) {
