@@ -1,6 +1,8 @@
 # API Moments — build de produção (multi-stage)
-FROM node:20-alpine AS build
+# Base Debian slim (não Alpine): o Prisma precisa de glibc/OpenSSL e funciona sem ajustes.
+FROM node:20-slim AS build
 WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 COPY package*.json ./
 RUN npm ci
 COPY prisma ./prisma
@@ -9,9 +11,10 @@ COPY tsconfig.json tsconfig.build.json ./
 COPY src ./src
 RUN npm run build
 
-FROM node:20-alpine AS runtime
+FROM node:20-slim AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
+RUN apt-get update && apt-get install -y --no-install-recommends openssl && rm -rf /var/lib/apt/lists/*
 # node_modules completo (inclui o CLI do Prisma para `migrate deploy` no start)
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
