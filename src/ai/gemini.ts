@@ -39,6 +39,31 @@ async function generate(system: string, userText: string, gen: GenConfig): Promi
   }
 }
 
+// Diagnóstico: faz uma chamada mínima e devolve o resultado SEM expor a chave.
+// Útil para descobrir, em produção, por que a IA não respondeu.
+export async function geminiDiagnose(): Promise<{
+  enabled: boolean; ok: boolean; status: number | null; model: string; error: string | null;
+}> {
+  const key = process.env.GEMINI_API_KEY;
+  if (!key) return { enabled: false, ok: false, status: null, model: MODEL, error: "GEMINI_API_KEY ausente" };
+  try {
+    const res = await fetch(`${BASE}/${MODEL}:generateContent?key=${encodeURIComponent(key)}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "ping" }] }], generationConfig: { maxOutputTokens: 5 } }),
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!res.ok) {
+      let body = "";
+      try { body = (await res.text()).slice(0, 300); } catch { /* ignore */ }
+      return { enabled: true, ok: false, status: res.status, model: MODEL, error: body.replace(key, "***") || res.statusText };
+    }
+    return { enabled: true, ok: true, status: 200, model: MODEL, error: null };
+  } catch (e: any) {
+    return { enabled: true, ok: false, status: null, model: MODEL, error: String(e?.message || e).slice(0, 200) };
+  }
+}
+
 export async function geminiChat(contextText: string, userText: string): Promise<string | null> {
   const prompt = `CONTEXTO (dados do usuário):\n${contextText}\n\nPergunta do usuário:\n${userText}`;
   return generate(CHAT_SYSTEM, prompt, { maxOutputTokens: 1024, temperature: 0.6 });
