@@ -1,0 +1,27 @@
+name: Keep API awake
+
+# Mantém a API do Render "acordada" para os lembretes (ex.: "5 min antes") saírem na
+# hora. Faz um ping no /health a cada ~10 minutos. Grátis em repositórios públicos.
+# A URL pode ser trocada por uma variável de repositório PING_URL (Settings → Actions
+# → Variables), senão usa a URL padrão abaixo.
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pingar /health algumas vezes (cobre atrasos do agendador)
+        env:
+          PING_URL: ${{ vars.PING_URL }}
+        run: |
+          URL="${PING_URL:-https://moments-api-m0tn.onrender.com/health}"
+          echo "Pingando: $URL"
+          for i in 1 2 3 4 5; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" --max-time 40 "$URL" || echo "000")
+            echo "ping $i -> HTTP $code"
+            if [ "$i" -lt 5 ]; then sleep 100; fi
+          done
