@@ -25,8 +25,8 @@ const loginSchema = z.object({
   deviceName: z.string().max(120).optional(),
 });
 
-function publicUser(u: { id: string; email: string; name: string; status: string }) {
-  return { id: u.id, email: u.email, name: u.name, status: u.status };
+function publicUser(u: { id: string; email: string; name: string; status: string; photoUrl?: string | null }) {
+  return { id: u.id, email: u.email, name: u.name, status: u.status, photoUrl: u.photoUrl ?? null };
 }
 
 async function createSession(uid: string, deviceName?: string, userAgent?: string) {
@@ -121,6 +121,33 @@ export async function authRoutes(app: FastifyInstance) {
   app.get("/auth/me", { preHandler: requireAuth }, async (req, reply) => {
     const user = await prisma.user.findUnique({ where: { id: userId(req) } });
     if (!user) return reply.code(404).send({ error: "not_found" });
+    return reply.send({ user: publicUser(user) });
+  });
+
+  // Trocar a senha (precisa da senha atual).
+  app.post("/auth/password", { ...strictLimit, preHandler: requireAuth }, async (req, reply) => {
+    const body = z.object({ currentPassword: z.string().min(1), newPassword: z.string().min(8).max(200) }).parse(req.body);
+    const user = await prisma.user.findUnique({ where: { id: userId(req) } });
+    if (!user) return reply.code(404).send({ error: "not_found" });
+    if (!(await verifyPassword(body.currentPassword, user.passwordHash))) {
+      return reply.code(403).send({ error: "wrong_password" });
+    }
+    await prisma.user.update({ where: { id: user.id }, data: { passwordHash: await hashPassword(body.newPassword) } });
+    return reply.send({ ok: true });
+  });
+
+  // Definir/atualizar a foto de perfil (imagem pequena como data URL, enviada pelo cliente).
+  app.post("/auth/photo", { preHandler: requireAuth }, async (req, reply) => {
+    const { dataUrl } = z.object({ dataUrl: z.string() }).parse(req.body);
+    if (!/^data:image\/(png|jpe?g|webp);base64,/.test(dataUrl)) return reply.code(400).send({ error: "invalid_image" });
+    if (dataUrl.length > 500_000) return reply.code(413).send({ error: "image_too_large" });
+    const user = await prisma.user.update({ where: { id: userId(req) }, data: { photoUrl: dataUrl } });
+    return reply.send({ user: publicUser(user) });
+  });
+
+  // Remover a foto de perfil.
+  app.delete("/auth/photo", { preHandler: requireAuth }, async (req, reply) => {
+    const user = await prisma.user.update({ where: { id: userId(req) }, data: { photoUrl: null } });
     return reply.send({ user: publicUser(user) });
   });
 

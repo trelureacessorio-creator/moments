@@ -46,7 +46,10 @@ export function App() {
     <div className="app">
       <header>
         <div className="bar gutter">
-          <div className="brand"><span className="dot" />Moments</div>
+          <div className="brand">
+            <span className="dot" style={s.user?.photoUrl ? { backgroundImage: `url(${s.user.photoUrl})`, backgroundSize: "cover", backgroundPosition: "center" } : undefined} />
+            Moments
+          </div>
           <div className="bar-right">
             {s.syncing && <span className="syncdot">sincronizando…</span>}
             <button className="bell" onClick={() => setTab("notificacoes")} aria-label={`Avisos${unread ? ` (${unread} não lidos)` : ""}`}>

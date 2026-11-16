@@ -13,6 +13,7 @@ export interface PublicUser {
   email: string;
   name: string;
   status: string;
+  photoUrl?: string | null;
 }
 
 let tokens: Tokens | null = loadTokens();
@@ -123,6 +124,17 @@ export const api = {
   },
   deleteSession(id: string) {
     return request(`/auth/sessions/${id}`, { method: "DELETE" });
+  },
+  changePassword(currentPassword: string, newPassword: string) {
+    return request<{ ok: boolean }>("/auth/password", { method: "POST", body: JSON.stringify({ currentPassword, newPassword }) });
+  },
+  async setPhoto(dataUrl: string) {
+    const r = await request<{ user: PublicUser }>("/auth/photo", { method: "POST", body: JSON.stringify({ dataUrl }) });
+    return r.user;
+  },
+  async removePhoto() {
+    const r = await request<{ user: PublicUser }>("/auth/photo", { method: "DELETE" });
+    return r.user;
   },
   async logout() {
     try {

@@ -108,6 +108,10 @@ export async function doLogout() {
   await api.logout();
   commit({ user: null, data: {}, cursor: 0, error: null });
 }
+// Atualiza o usuário no estado (ex.: após trocar a foto de perfil).
+export function setUser(user: PublicUser) {
+  commit({ user });
+}
 
 // ---- sincronização ----
 export async function pull() {

@@ -185,6 +185,11 @@ body.chat-mode main { padding: 0; height: calc(100vh - 55px - 61px); height: cal
 .sw { width: 20px; height: 20px; accent-color: var(--accent); }
 .cfg-steps { margin: 8px 0 0; padding-left: 18px; font-size: 13px; color: var(--muted); line-height: 1.6; }
 .cfg-steps b { color: var(--fg); }
+/* avatar / foto de perfil */
+.cfg-avatar-row { display: flex; align-items: center; gap: 14px; padding: 4px 0 12px; }
+.cfg-avatar { width: 64px; height: 64px; border-radius: 50%; object-fit: cover; flex: none; border: 1px solid var(--line); }
+.cfg-avatar-ph { display: inline-flex; align-items: center; justify-content: center; font-family: var(--display); font-weight: 600; font-size: 26px; color: #fff; background: radial-gradient(circle at 32% 30%, var(--warm), var(--accent)); border: none; }
+.cfg-avatar-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 /* seletor segmentado (ex.: tema) */
 .seg { display: flex; gap: 6px; background: var(--surface-2); padding: 4px; border-radius: 12px; }
 .seg-btn { flex: 1; border: none; background: transparent; color: var(--muted); font-size: 13.5px; font-weight: 500; padding: 9px 0; border-radius: 9px; }

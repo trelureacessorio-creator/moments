@@ -1,6 +1,28 @@
-import { useState, useEffect } from "react";
-import { useStore, list, updateRecord, pull, doLogout } from "../lib/store";
+import { useState, useEffect, useRef } from "react";
+import { useStore, list, updateRecord, pull, doLogout, setUser } from "../lib/store";
 import { api } from "../lib/api";
+
+// Lê a imagem escolhida e reduz para no máx. ~256px (JPEG), gerando um data URL leve.
+function readAndResize(file: File, max = 256): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, max / Math.max(img.width, img.height));
+      const w = Math.max(1, Math.round(img.width * scale));
+      const h = Math.max(1, Math.round(img.height * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return reject(new Error("no ctx"));
+      ctx.drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL("image/jpeg", 0.85));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("img error")); };
+    img.src = url;
+  });
+}
 import { getTheme, applyTheme, type Theme } from "../lib/theme";
 import { pushSupported, isStandalone, pushStatus, enablePush, disablePush, syncSubscription, diagnoseAndTest, type PushState } from "../lib/push";
 
@@ -37,7 +59,56 @@ export function Configuracoes({ onBack }: { onBack: () => void }) {
   const [pushMsg, setPushMsg] = useState<string | null>(null);
   const isIOS = typeof navigator !== "undefined" && /iphone|ipad|ipod/i.test(navigator.userAgent);
 
+  const photoInput = useRef<HTMLInputElement>(null);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const [photoMsg, setPhotoMsg] = useState<string | null>(null);
+  const [curPwd, setCurPwd] = useState("");
+  const [newPwd, setNewPwd] = useState("");
+  const [confPwd, setConfPwd] = useState("");
+  const [pwdBusy, setPwdBusy] = useState(false);
+  const [pwdMsg, setPwdMsg] = useState<string | null>(null);
+
   function chooseTheme(t: Theme) { setTheme(t); applyTheme(t); }
+
+  async function onPickPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (photoInput.current) photoInput.current.value = "";
+    if (!file) return;
+    setPhotoBusy(true); setPhotoMsg(null);
+    try {
+      const dataUrl = await readAndResize(file);
+      setUser(await api.setPhoto(dataUrl));
+      setPhotoMsg("Foto atualizada. ✓");
+    } catch {
+      setPhotoMsg("Não foi possível atualizar a foto. Tente uma imagem menor.");
+    } finally {
+      setPhotoBusy(false);
+    }
+  }
+
+  async function removePhoto() {
+    setPhotoBusy(true); setPhotoMsg(null);
+    try { setUser(await api.removePhoto()); setPhotoMsg("Foto removida."); }
+    catch { setPhotoMsg("Não foi possível remover agora."); }
+    finally { setPhotoBusy(false); }
+  }
+
+  async function changePassword() {
+    setPwdMsg(null);
+    if (newPwd.length < 8) { setPwdMsg("A nova senha precisa ter ao menos 8 caracteres."); return; }
+    if (newPwd !== confPwd) { setPwdMsg("A confirmação não confere com a nova senha."); return; }
+    setPwdBusy(true);
+    try {
+      await api.changePassword(curPwd, newPwd);
+      setPwdMsg("Senha alterada com sucesso. ✓");
+      setCurPwd(""); setNewPwd(""); setConfPwd("");
+    } catch (e: any) {
+      if (e?.status === 403) setPwdMsg("A senha atual está incorreta.");
+      else setPwdMsg("Não foi possível alterar a senha agora.");
+    } finally {
+      setPwdBusy(false);
+    }
+  }
 
   useEffect(() => {
     pushStatus().then((st) => {
@@ -110,8 +181,39 @@ export function Configuracoes({ onBack }: { onBack: () => void }) {
       <section>
         <div className="card pad">
           <div className="cfg-h">Perfil</div>
+          <div className="cfg-avatar-row">
+            {s.user?.photoUrl
+              ? <img className="cfg-avatar" src={s.user.photoUrl} alt="Foto de perfil" />
+              : <span className="cfg-avatar cfg-avatar-ph">{(s.user?.name || "?").trim().charAt(0).toUpperCase()}</span>}
+            <div className="cfg-avatar-actions">
+              <input ref={photoInput} id="photo-input" type="file" accept="image/*" hidden onChange={onPickPhoto} />
+              <label htmlFor="photo-input" className="chip-btn">{photoBusy ? "…" : s.user?.photoUrl ? "Trocar foto" : "Adicionar foto"}</label>
+              {s.user?.photoUrl && <button className="chip-btn" onClick={removePhoto} disabled={photoBusy}>Remover</button>}
+            </div>
+          </div>
+          {photoMsg && <p className="cfg-note">{photoMsg}</p>}
           <div className="cfg-row"><span className="cfg-lbl">Nome</span><span className="cfg-val">{s.user?.name}</span></div>
           <div className="cfg-row"><span className="cfg-lbl">E-mail</span><span className="cfg-val">{s.user?.email}</span></div>
+        </div>
+      </section>
+
+      {/* Senha */}
+      <section>
+        <div className="card pad">
+          <div className="cfg-h">Senha</div>
+          <div className="field"><label>Senha atual</label>
+            <input type="password" value={curPwd} onChange={(e) => setCurPwd(e.target.value)} autoComplete="current-password" />
+          </div>
+          <div className="field"><label>Nova senha (mín. 8)</label>
+            <input type="password" value={newPwd} onChange={(e) => setNewPwd(e.target.value)} autoComplete="new-password" />
+          </div>
+          <div className="field"><label>Confirmar nova senha</label>
+            <input type="password" value={confPwd} onChange={(e) => setConfPwd(e.target.value)} autoComplete="new-password" />
+          </div>
+          <button className="btn" style={{ width: "100%", marginTop: 4 }} onClick={changePassword} disabled={pwdBusy || !curPwd || !newPwd || !confPwd}>
+            {pwdBusy ? "…" : "Alterar senha"}
+          </button>
+          {pwdMsg && <p className="cfg-note">{pwdMsg}</p>}
         </div>
       </section>
 
