@@ -26,10 +26,11 @@ export function Conversar() {
     endRef.current?.scrollIntoView({ block: "end" });
   };
   useEffect(() => {
-    // Espera o layout montar antes de rolar (evita cair no topo ao abrir a aba).
+    // Mobile (Safari) termina o layout em etapas (fontes, barra do navegador),
+    // então reforçamos o "ir pro fim" várias vezes logo após abrir.
     const r = requestAnimationFrame(() => requestAnimationFrame(toBottom));
-    const t = window.setTimeout(toBottom, 120);
-    return () => { cancelAnimationFrame(r); window.clearTimeout(t); };
+    const ids = [0, 80, 200, 400, 700].map((ms) => window.setTimeout(toBottom, ms));
+    return () => { cancelAnimationFrame(r); ids.forEach((i) => window.clearTimeout(i)); };
   }, [messages.length, busy, suggestion]);
 
   async function send(text?: string) {
