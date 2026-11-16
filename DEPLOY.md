@@ -134,7 +134,13 @@ Garantias: a IA só vê um **resumo dos dados do próprio usuário** (fundamenta
 usuário confirma no app. Se a chave faltar ou a API falhar, cai no motor determinístico
 automaticamente.
 
+## Voz (já integrada, grátis com o Groq)
+
+Gravação de áudio no navegador (Conversar e Diário) + transcrição pelo **Whisper do
+Groq** (rota `/ai/transcribe`). Usa a mesma `GROQ_API_KEY`; o modelo de transcrição é
+descoberto automaticamente (`GROQ_WHISPER_MODEL` é opcional, ex.: `whisper-large-v3-turbo`).
+Sem a chave, o microfone some e o texto continua podendo ser digitado.
+
 ## Pendente para versões seguintes
 
 - **Arquivos (upload real)**: armazenamento de objetos (S3/R2) com URLs assinadas.
-- **Voz**: captura de áudio + transcrição (serviço externo com chave).

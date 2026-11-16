@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useStore, list, createRecord } from "../lib/store";
 import { api } from "../lib/api";
+import { useRecorder } from "../lib/useRecorder";
 import { isoToday, nowTime, fmtRel, cap } from "../lib/dates";
 
 const MOODS = ["Alegria", "Gratidão", "Tranquilidade", "Neutro", "Cansaço", "Ansiedade", "Tristeza"];
@@ -50,6 +51,7 @@ function Compose({ onClose }: { onClose: () => void }) {
   const [mood, setMood] = useState("");
   const [alsoCreate, setAlsoCreate] = useState(true);
   const [busy, setBusy] = useState(false);
+  const rec = useRecorder((t) => setText((prev) => (prev ? prev.trim() + " " : "") + t));
 
   async function analyze() {
     if (!text.trim()) return;
@@ -82,7 +84,25 @@ function Compose({ onClose }: { onClose: () => void }) {
     <div className="overlay" onClick={onClose}>
       <div className="sheet" onClick={(e) => e.stopPropagation()}>
         <div className="sheet-head"><h3>Novo relato</h3><button className="chip-btn" onClick={onClose}>Fechar</button></div>
-        <textarea className="note" placeholder="Como foi o seu dia?" value={text} onChange={(e) => setText(e.target.value)} autoFocus />
+        <textarea className="note" placeholder="Como foi o seu dia? Escreva ou use o microfone." value={text} onChange={(e) => setText(e.target.value)} autoFocus />
+
+        {rec.supported && (
+          <div className="rec-row">
+            <button
+              type="button"
+              className={"mic" + (rec.state === "recording" ? " on" : "")}
+              onClick={() => (rec.state === "recording" ? rec.stop() : rec.start())}
+              disabled={rec.state === "transcribing"}
+              aria-label={rec.state === "recording" ? "Parar gravação" : "Gravar voz"}
+            >
+              {rec.state === "recording" ? "⏹" : rec.state === "transcribing" ? "…" : "🎤"}
+            </button>
+            <span className="rec-lbl">
+              {rec.state === "recording" ? "Gravando… toque para parar." : rec.state === "transcribing" ? "Transcrevendo…" : "Falar o relato"}
+            </span>
+          </div>
+        )}
+        {rec.error && <div className="flash" style={{ marginTop: 8 }}>{rec.error}</div>}
 
         {!analysis ? (
           <div className="sheet-actions">

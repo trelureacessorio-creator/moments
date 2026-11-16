@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useStore, list, createRecord, pull } from "../lib/store";
 import { api } from "../lib/api";
+import { useRecorder } from "../lib/useRecorder";
 
 const SUGESTOES = [
   "Qual meu próximo compromisso?",
@@ -16,6 +17,7 @@ export function Conversar() {
   const [pendingUser, setPendingUser] = useState<string | null>(null);
   const [suggestion, setSuggestion] = useState<any | null>(null);
   const [flash, setFlash] = useState<string | null>(null);
+  const rec = useRecorder((t) => setInput((prev) => (prev ? prev + " " : "") + t));
 
   const messages = list(s.data, "aiMessages")
     .filter((m) => !m.deletedAt)
@@ -87,7 +89,9 @@ export function Conversar() {
         </div>
       )}
 
-      {flash && <div className="flash">{flash}</div>}
+      {(flash || rec.error) && <div className="flash">{flash || rec.error}</div>}
+      {rec.state === "recording" && <div className="rec-hint">● Gravando… toque no microfone para parar.</div>}
+      {rec.state === "transcribing" && <div className="rec-hint">Transcrevendo seu áudio…</div>}
 
       <div className="chips">
         {SUGESTOES.map((q) => (
@@ -96,6 +100,18 @@ export function Conversar() {
       </div>
 
       <form className="composer" onSubmit={(e) => { e.preventDefault(); send(); }}>
+        {rec.supported && (
+          <button
+            type="button"
+            className={"mic" + (rec.state === "recording" ? " on" : "")}
+            onClick={() => (rec.state === "recording" ? rec.stop() : rec.start())}
+            disabled={busy || rec.state === "transcribing"}
+            title="Falar"
+            aria-label={rec.state === "recording" ? "Parar gravação" : "Gravar voz"}
+          >
+            {rec.state === "recording" ? "⏹" : rec.state === "transcribing" ? "…" : "🎤"}
+          </button>
+        )}
         <input placeholder="Pergunte ou peça algo…" value={input} onChange={(e) => setInput(e.target.value)} />
         <button type="submit" disabled={busy}>{busy ? "…" : "Enviar"}</button>
       </form>

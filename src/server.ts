@@ -2,6 +2,7 @@ import Fastify, { type FastifyInstance } from "fastify";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
+import multipart from "@fastify/multipart";
 import { ZodError } from "zod";
 import { authRoutes } from "./auth/routes";
 import { syncRoutes } from "./sync/routes";
@@ -26,6 +27,9 @@ export function buildServer(): FastifyInstance {
     timeWindow: "1 minute",
     allowList: () => env.NODE_ENV !== "production", // sem limite em dev/testes
   });
+
+  // Upload de áudio para transcrição (voz). Limite de 25 MB por arquivo.
+  app.register(multipart, { limits: { fileSize: 25 * 1024 * 1024, files: 1 } });
 
   const origins = env.CORS_ORIGIN.split(",").map((o) => o.trim()).filter(Boolean);
   app.register(cors, { origin: origins.length ? origins : true });

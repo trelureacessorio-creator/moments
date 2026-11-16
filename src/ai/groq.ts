@@ -14,6 +14,8 @@ export function isGroqEnabled(): boolean {
 }
 
 let cachedModel: string | null = null;
+let cachedWhisper: string | null = null;
+const WHISPER_FALLBACK = "whisper-large-v3-turbo";
 
 // Escolhe um bom modelo de chat entre os ids disponíveis (evita áudio/guard/embed).
 function pickChatModel(ids: string[]): string | null {
@@ -49,6 +51,48 @@ async function resolveModel(): Promise<string> {
   const picked = pickChatModel(await listModels());
   cachedModel = picked || FALLBACK_MODEL;
   return cachedModel;
+}
+
+// Escolhe um modelo de transcrição (Whisper) entre os ids disponíveis.
+function pickWhisperModel(ids: string[]): string | null {
+  return ids.find((id) => /whisper.*turbo/i.test(id)) || ids.find((id) => /whisper/i.test(id)) || null;
+}
+
+async function resolveWhisper(): Promise<string> {
+  if (process.env.GROQ_WHISPER_MODEL) return process.env.GROQ_WHISPER_MODEL;
+  if (cachedWhisper) return cachedWhisper;
+  cachedWhisper = pickWhisperModel(await listModels()) || WHISPER_FALLBACK;
+  return cachedWhisper;
+}
+
+// Transcreve um áudio (voz → texto) usando o Whisper do Groq. Retorna null em falha.
+export async function groqTranscribe(
+  audio: Buffer,
+  filename = "audio.webm",
+  mimetype = "audio/webm",
+): Promise<string | null> {
+  const key = process.env.GROQ_API_KEY;
+  if (!key) return null;
+  try {
+    const model = await resolveWhisper();
+    const form = new FormData();
+    form.append("file", new Blob([new Uint8Array(audio)], { type: mimetype || "audio/webm" }), filename || "audio.webm");
+    form.append("model", model);
+    form.append("language", "pt");
+    form.append("response_format", "json");
+    const res = await fetch(`${BASE}/audio/transcriptions`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${key}` }, // sem content-type: o fetch define o boundary
+      body: form,
+      signal: AbortSignal.timeout(60000),
+    });
+    if (!res.ok) return null;
+    const data: any = await res.json();
+    const text = data?.text;
+    return typeof text === "string" && text.trim() ? text.trim() : null;
+  } catch {
+    return null;
+  }
 }
 
 // POST chat/completions com reenvio em erro transitório. Retorna a Response ou null.

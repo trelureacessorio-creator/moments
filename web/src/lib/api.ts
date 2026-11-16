@@ -155,4 +155,20 @@ export const api = {
       body: JSON.stringify({ text }),
     });
   },
+  // Envia o áudio gravado e recebe a transcrição (texto). Multipart: NÃO definir
+  // content-type manualmente (o navegador cuida do boundary).
+  async transcribe(audio: Blob, filename = "audio.webm"): Promise<string> {
+    const form = new FormData();
+    form.append("file", audio, filename);
+    const send = async () => {
+      const headers: Record<string, string> = {};
+      if (tokens?.accessToken) headers.authorization = `Bearer ${tokens.accessToken}`;
+      return fetch(API_URL + "/ai/transcribe", { method: "POST", headers, body: form });
+    };
+    let res = await send();
+    if (res.status === 401 && tokens?.refreshToken && (await tryRefresh())) res = await send();
+    if (!res.ok) throw new ApiError(res.status, await res.json().catch(() => ({})));
+    const data = (await res.json()) as { text: string };
+    return data.text;
+  },
 };
