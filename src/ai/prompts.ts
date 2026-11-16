@@ -1,4 +1,4 @@
-// Prompts e utilidades compartilhados entre os provedores de IA (Claude, Gemini).
+// Prompts e utilidades compartilhados do provedor de IA (Groq).
 // Mantêm o mesmo comportamento fundamentado e a regra "sugere, não cria".
 
 export const MOODS = ["Gratidão", "Alegria", "Cansaço", "Ansiedade", "Tristeza", "Tranquilidade", "Neutro"];

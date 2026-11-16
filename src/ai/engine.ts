@@ -7,8 +7,8 @@ import { aiEnabled, aiChat, aiDiary } from "./provider";
 //   nada é criado aqui — a confirmação acontece no cliente, via sincronização.
 //
 // Implementação determinística (sem dependência externa), suficiente para a busca e o
-// assistente. O ponto de troca por um modelo (Claude) é a função `interpret`: ela pode
-// delegar a classificação/geração a um provedor quando houver ANTHROPIC_API_KEY.
+// assistente. Quando há GROQ_API_KEY, as perguntas abertas e a análise do diário são
+// delegadas ao provedor de IA (Groq) via `./provider`, sempre com fallback para cá.
 
 export interface Suggestion {
   collection: string; // coleção do sync (ex.: "appointments")
@@ -121,7 +121,7 @@ export async function analyzeDiaryFull(userId: string, text: string, now: Date =
   const pref = await prisma.preference.findUnique({ where: { ownerId: userId } });
   const tz = pref?.timezone || "America/Sao_Paulo";
   const { date: today } = localParts(now, tz);
-  // Título/resumo/sentimento: tenta o Claude; se indisponível ou falhar, usa o motor local.
+  // Título/resumo/sentimento: tenta a IA (Groq); se indisponível ou falhar, usa o motor local.
   const base = (aiEnabled() ? await aiDiary(text) : null) ?? analyzeDiary(text);
   // Extrai a sugestão da FRASE que contém o gatilho (não do relato inteiro),
   // para o título ficar limpo (ex.: "Consulta no dentista").
@@ -133,7 +133,7 @@ export async function analyzeDiaryFull(userId: string, text: string, now: Date =
   return { ...base, suggestion };
 }
 
-// ---------- contexto fundamentado para o Claude ----------
+// ---------- contexto fundamentado para a IA ----------
 // Monta um resumo compacto e REAL dos dados do usuário (nunca dados de terceiros),
 // para o modelo responder com base nisso e jamais inventar.
 async function buildUserContext(userId: string, today: string): Promise<string> {
@@ -221,7 +221,7 @@ export async function interpret(userId: string, text: string, now: Date = new Da
     return { reply: "Estou aqui para ajudar. Posso ver seus compromissos, tarefas, metas e economias — ou registrar algo (é só pedir)." };
   }
 
-  // Sem correspondência exata: se o Claude estiver ativo, responde fundamentado nos
+  // Sem correspondência exata: se a IA estiver ativa, responde fundamentado nos
   // dados do usuário; caso contrário (ou em falha), a resposta honesta do motor local.
   const fallback = "Ainda não encontrei isso nas suas informações. Posso ajudar com compromissos, tarefas, metas ou economias — ou peça para eu anotar algo (ex.: \"marque dentista amanhã às 9h\").";
   if (aiEnabled()) {

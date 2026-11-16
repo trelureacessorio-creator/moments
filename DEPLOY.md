@@ -117,35 +117,22 @@ e troque o `CMD` da API por apenas `node dist/index.js`.
 ## IA no assistente e no diário (opcional, já integrada)
 
 O assistente funciona sem nenhuma chave (motor determinístico, grátis). Para respostas
-de conversa mais naturais e uma análise de diário melhor, defina uma chave na
-**moments-api**. A ordem de preferência é **Gemini → Claude → motor local**.
+de conversa mais naturais e uma análise de diário melhor, use o **Groq** (grátis).
 
-### Opção grátis recomendada — Groq (rápido e estável, sem cartão)
+### Groq (grátis, sem cartão)
 
-- Crie a chave em **console.groq.com/keys**.
-- Na **moments-api → Environment**, adicione `GROQ_API_KEY` = sua chave (começa com `gsk_`).
+- Crie a chave em **console.groq.com/keys** (começa com `gsk_`).
+- Na **moments-api → Environment**, adicione `GROQ_API_KEY` = sua chave.
 - Não precisa definir o modelo: o app descobre sozinho um modelo válido da conta
   (`GROQ_MODEL` é opcional, ex.: `llama-3.3-70b-versatile`).
 
-### Opção grátis alternativa — Gemini (Google AI Studio)
+> Diagnóstico: abra **`/ai/health`** na API para ver se o Groq está ativo, os modelos
+> disponíveis e um teste (sem expor segredos).
 
-- Crie a chave em **aistudio.google.com/apikey** (sem cartão; modelos *Flash* têm camada gratuita).
-- Na **moments-api → Environment**, adicione `GEMINI_API_KEY` = sua chave.
-- Pode ficar sobrecarregado em horários de pico (erros 503); o Groq costuma ser mais estável.
-
-> Diagnóstico: abra `/health`? Não — abra **`/ai/health`** na API para ver quais provedores
-> estão ativos, os modelos disponíveis e um teste de cada um (sem expor segredos).
-
-### Opção paga — Claude (Anthropic)
-
-- `ANTHROPIC_API_KEY` = sua chave (console.anthropic.com; exige crédito pré-pago).
-- `ANTHROPIC_MODEL` (opcional) = `claude-haiku-5-5` para custo baixo (padrão: `claude-opus-5-5`).
-- `ANTHROPIC_EFFORT` (opcional) = `low` | `medium` | `high` (padrão: `low`).
-
-Garantias (qualquer provedor): a IA só vê um **resumo dos dados do próprio usuário**
-(fundamentado) e **nunca cria nem altera** registros — toda escrita continua sendo uma
-sugestão que o usuário confirma no app. Se a chave faltar ou a API falhar, cai no motor
-determinístico automaticamente.
+Garantias: a IA só vê um **resumo dos dados do próprio usuário** (fundamentado) e
+**nunca cria nem altera** registros — toda escrita continua sendo uma sugestão que o
+usuário confirma no app. Se a chave faltar ou a API falhar, cai no motor determinístico
+automaticamente.
 
 ## Pendente para versões seguintes
 
