@@ -7,7 +7,9 @@
 // o schema enxuto; chaves estrangeiras podem ser acrescentadas por entidade quando útil.
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // Garante o engine correto na imagem de produção (Debian + OpenSSL 3).
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
 }
 
 datasource db {
