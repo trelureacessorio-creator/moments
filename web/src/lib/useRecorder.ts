@@ -23,11 +23,22 @@ export function useRecorder(onText: (text: string) => void) {
     setError(null);
     if (!supported) { setError("Gravação não suportada neste navegador."); return; }
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      // Constraints de áudio "tipo WhatsApp": mono, com redução de ruído, cancelamento
+      // de eco e ganho automático — melhora muito a transcrição.
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
       streamRef.current = stream;
       chunksRef.current = [];
-      // Deixa o navegador escolher um formato suportado (webm/opus na maioria).
-      const rec = new MediaRecorder(stream);
+      // Prefere Opus (melhor qualidade por bit); grava a ~128 kbps.
+      const candidates = ["audio/webm;codecs=opus", "audio/ogg;codecs=opus", "audio/webm"];
+      const mimeType = candidates.find((m) => (window as any).MediaRecorder?.isTypeSupported?.(m)) || "";
+      const rec = new MediaRecorder(stream, mimeType ? { mimeType, audioBitsPerSecond: 128000 } : { audioBitsPerSecond: 128000 });
       rec.ondataavailable = (e) => { if (e.data.size > 0) chunksRef.current.push(e.data); };
       rec.onstop = async () => {
         stopTracks();

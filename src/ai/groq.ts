@@ -15,7 +15,7 @@ export function isGroqEnabled(): boolean {
 
 let cachedModel: string | null = null;
 let cachedWhisper: string | null = null;
-const WHISPER_FALLBACK = "whisper-large-v3-turbo";
+const WHISPER_FALLBACK = "whisper-large-v3";
 
 // Escolhe um bom modelo de chat entre os ids disponíveis (evita áudio/guard/embed).
 function pickChatModel(ids: string[]): string | null {
@@ -53,9 +53,15 @@ async function resolveModel(): Promise<string> {
   return cachedModel;
 }
 
-// Escolhe um modelo de transcrição (Whisper) entre os ids disponíveis.
+// Escolhe um modelo de transcrição (Whisper). Prioriza o large-v3 completo (mais
+// preciso) ao invés do "turbo" (mais rápido, porém erra mais).
 function pickWhisperModel(ids: string[]): string | null {
-  return ids.find((id) => /whisper.*turbo/i.test(id)) || ids.find((id) => /whisper/i.test(id)) || null;
+  return (
+    ids.find((id) => /whisper-large-v3$/i.test(id)) ||
+    ids.find((id) => /whisper/i.test(id) && !/turbo/i.test(id)) ||
+    ids.find((id) => /whisper/i.test(id)) ||
+    null
+  );
 }
 
 async function resolveWhisper(): Promise<string> {
@@ -80,6 +86,9 @@ export async function groqTranscribe(
     form.append("model", model);
     form.append("language", "pt");
     form.append("response_format", "json");
+    form.append("temperature", "0"); // determinístico, menos "chute"
+    // Dica de contexto para enviesar a grafia ao português do Brasil.
+    form.append("prompt", "Transcrição de áudio em português do Brasil, com pontuação correta.");
     const res = await fetch(`${BASE}/audio/transcriptions`, {
       method: "POST",
       headers: { authorization: `Bearer ${key}` }, // sem content-type: o fetch define o boundary
