@@ -4,22 +4,28 @@ import { CHAT_SYSTEM, DIARY_SYSTEM, parseDiaryJson } from "./prompts";
 // Usa a API REST do Google AI (camada gratuita com os modelos Flash). Só gera texto;
 // nunca cria/altera registros. Qualquer falha retorna null (quem chama faz o fallback).
 
-const MODEL = process.env.GEMINI_MODEL || "gemini-3.8-flash";
 const BASE = "https://generativelanguage.googleapis.com/v1beta/models";
-// Status transitórios do Google: vale repetir a chamada.
+// Lista de modelos tentados em ordem. Se GEMINI_MODEL for definido, usa só ele.
+// Vários nomes dão robustez: se um foi descontinuado (404) ou está sobrecarregado
+// (503), o próximo assume automaticamente.
+const MODELS = process.env.GEMINI_MODEL
+  ? [process.env.GEMINI_MODEL]
+  : ["gemini-2.5-flash", "gemini-flash-latest", "gemini-3.8-flash", "gemini-2.0-flash-001"];
+// Status transitórios do Google (vale repetir) e "pular para o próximo modelo".
 const TRANSIENT = new Set([429, 500, 502, 503, 504]);
+const TRY_NEXT_MODEL = new Set([404, 429, 500, 502, 503, 504]);
 
 export function isGeminiEnabled(): boolean {
   return Boolean(process.env.GEMINI_API_KEY);
 }
 
-// POST ao Gemini com novas tentativas em erros transitórios (sobrecarga/limite).
-// Retorna a Response (mesmo com erro não-transitório, p/ diagnóstico) ou null se não há chave.
-async function postGemini(body: object): Promise<Response | null> {
+// POST a UM modelo, com reenvio em erro transitório. Retorna a Response (mesmo com
+// erro, para diagnóstico) ou null se não houver chave / falha de rede nas tentativas.
+async function postModel(model: string, body: object): Promise<Response | null> {
   const key = process.env.GEMINI_API_KEY;
   if (!key) return null;
-  const url = `${BASE}/${MODEL}:generateContent?key=${encodeURIComponent(key)}`;
-  const delays = [0, 700, 1600]; // tentativa imediata + 2 reenvios com espera
+  const url = `${BASE}/${model}:generateContent?key=${encodeURIComponent(key)}`;
+  const delays = [0, 600]; // tentativa imediata + 1 reenvio
   let last: Response | null = null;
   for (const d of delays) {
     if (d) await new Promise((r) => setTimeout(r, d));
@@ -32,7 +38,7 @@ async function postGemini(body: object): Promise<Response | null> {
       });
       if (res.ok) return res;
       last = res;
-      if (!TRANSIENT.has(res.status)) return res; // erro definitivo: não insiste
+      if (!TRANSIENT.has(res.status)) return res; // erro definitivo p/ este modelo
     } catch {
       last = null; // rede/timeout: tenta de novo
     }
@@ -40,15 +46,31 @@ async function postGemini(body: object): Promise<Response | null> {
   return last;
 }
 
+// Percorre a lista de modelos e devolve a 1ª Response OK (e o modelo usado). Em erro
+// que justifique trocar de modelo (404/5xx), tenta o próximo; outros erros param.
+async function postGemini(body: object): Promise<{ res: Response | null; model: string }> {
+  let lastRes: Response | null = null;
+  let lastModel = MODELS[0];
+  for (const model of MODELS) {
+    const res = await postModel(model, body);
+    lastModel = model;
+    if (res && res.ok) return { res, model };
+    lastRes = res;
+    if (res && !TRY_NEXT_MODEL.has(res.status)) break; // erro definitivo (ex.: 400 chave)
+  }
+  return { res: lastRes, model: lastModel };
+}
+
 type GenConfig = { maxOutputTokens: number; temperature?: number; responseMimeType?: string };
 
 async function generate(system: string, userText: string, gen: GenConfig): Promise<string | null> {
   try {
-    const res = await postGemini({
+    const out = await postGemini({
       systemInstruction: { parts: [{ text: system }] },
       contents: [{ role: "user", parts: [{ text: userText }] }],
       generationConfig: gen,
     });
+    const res = out?.res;
     if (!res || !res.ok) return null;
     const data: any = await res.json();
     const parts = data?.candidates?.[0]?.content?.parts;
@@ -62,21 +84,23 @@ async function generate(system: string, userText: string, gen: GenConfig): Promi
 
 // Diagnóstico: faz uma chamada mínima e devolve o resultado SEM expor a chave.
 export async function geminiDiagnose(): Promise<{
-  enabled: boolean; ok: boolean; status: number | null; model: string; error: string | null;
+  enabled: boolean; ok: boolean; status: number | null; model: string; tried: string[]; error: string | null;
 }> {
   const key = process.env.GEMINI_API_KEY;
-  if (!key) return { enabled: false, ok: false, status: null, model: MODEL, error: "GEMINI_API_KEY ausente" };
+  if (!key) return { enabled: false, ok: false, status: null, model: MODELS[0], tried: MODELS, error: "GEMINI_API_KEY ausente" };
   try {
-    const res = await postGemini({ contents: [{ role: "user", parts: [{ text: "ping" }] }], generationConfig: { maxOutputTokens: 5 } });
-    if (!res) return { enabled: true, ok: false, status: null, model: MODEL, error: "sem resposta (rede/timeout)" };
+    const out = await postGemini({ contents: [{ role: "user", parts: [{ text: "ping" }] }], generationConfig: { maxOutputTokens: 5 } });
+    const res = out?.res ?? null;
+    const model = out?.model ?? MODELS[0];
+    if (!res) return { enabled: true, ok: false, status: null, model, tried: MODELS, error: "sem resposta (rede/timeout)" };
     if (!res.ok) {
       let body = "";
       try { body = (await res.text()).slice(0, 300); } catch { /* ignore */ }
-      return { enabled: true, ok: false, status: res.status, model: MODEL, error: body.replace(key, "***") || res.statusText };
+      return { enabled: true, ok: false, status: res.status, model, tried: MODELS, error: body.replace(key, "***") || res.statusText };
     }
-    return { enabled: true, ok: true, status: 200, model: MODEL, error: null };
+    return { enabled: true, ok: true, status: 200, model, tried: MODELS, error: null };
   } catch (e: any) {
-    return { enabled: true, ok: false, status: null, model: MODEL, error: String(e?.message || e).slice(0, 200) };
+    return { enabled: true, ok: false, status: null, model: MODELS[0], tried: MODELS, error: String(e?.message || e).slice(0, 200) };
   }
 }
 
@@ -88,7 +112,6 @@ export async function geminiChat(contextText: string, userText: string): Promise
 export async function geminiDiary(
   text: string,
 ): Promise<{ title: string; summary: string; mood: string } | null> {
-  // responseMimeType JSON torna a saída estruturada e o parse confiável.
   const raw = await generate(DIARY_SYSTEM, `Relato:\n${text}`, {
     maxOutputTokens: 512,
     temperature: 0.2,
