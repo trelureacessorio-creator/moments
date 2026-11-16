@@ -120,11 +120,21 @@ O assistente funciona sem nenhuma chave (motor determinístico, grátis). Para r
 de conversa mais naturais e uma análise de diário melhor, defina uma chave na
 **moments-api**. A ordem de preferência é **Gemini → Claude → motor local**.
 
-### Opção grátis — Gemini (Google AI Studio)
+### Opção grátis recomendada — Groq (rápido e estável, sem cartão)
+
+- Crie a chave em **console.groq.com/keys**.
+- Na **moments-api → Environment**, adicione `GROQ_API_KEY` = sua chave (começa com `gsk_`).
+- Não precisa definir o modelo: o app descobre sozinho um modelo válido da conta
+  (`GROQ_MODEL` é opcional, ex.: `llama-3.3-70b-versatile`).
+
+### Opção grátis alternativa — Gemini (Google AI Studio)
 
 - Crie a chave em **aistudio.google.com/apikey** (sem cartão; modelos *Flash* têm camada gratuita).
 - Na **moments-api → Environment**, adicione `GEMINI_API_KEY` = sua chave.
-- `GEMINI_MODEL` (opcional) = `gemini-3.8-flash` (padrão) ou `gemini-1.5-flash`.
+- Pode ficar sobrecarregado em horários de pico (erros 503); o Groq costuma ser mais estável.
+
+> Diagnóstico: abra `/health`? Não — abra **`/ai/health`** na API para ver quais provedores
+> estão ativos, os modelos disponíveis e um teste de cada um (sem expor segredos).
 
 ### Opção paga — Claude (Anthropic)
 
