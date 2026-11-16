@@ -17,19 +17,21 @@ export function Conversar() {
     .filter((m) => !m.deletedAt)
     .sort((a, b) => (a.rev || 0) - (b.rev || 0));
 
-  // Ao abrir e a cada nova mensagem, desce para o fim (últimas mensagens + caixa).
-  const endRef = useRef<HTMLDivElement>(null);
+  // Layout "modo chat" (cabeçalho e caixa fixos, só as mensagens rolam) — como no WhatsApp.
+  useEffect(() => {
+    document.body.classList.add("chat-mode");
+    return () => document.body.classList.remove("chat-mode");
+  }, []);
+
+  // Rola a ÁREA DE MENSAGENS até o fim (instantâneo e confiável, inclusive no celular).
+  const scrollRef = useRef<HTMLDivElement>(null);
   const toBottom = () => {
-    // Rola a página toda até o fim (a caixa de digitação fica visível embaixo).
-    const h = document.documentElement.scrollHeight;
-    window.scrollTo({ top: h });
-    endRef.current?.scrollIntoView({ block: "end" });
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
   };
   useEffect(() => {
-    // Mobile (Safari) termina o layout em etapas (fontes, barra do navegador),
-    // então reforçamos o "ir pro fim" várias vezes logo após abrir.
-    const r = requestAnimationFrame(() => requestAnimationFrame(toBottom));
-    const ids = [0, 80, 200, 400, 700].map((ms) => window.setTimeout(toBottom, ms));
+    const r = requestAnimationFrame(toBottom);
+    const ids = [0, 60, 160, 320].map((ms) => window.setTimeout(toBottom, ms));
     return () => { cancelAnimationFrame(r); ids.forEach((i) => window.clearTimeout(i)); };
   }, [messages.length, busy, suggestion]);
 
@@ -39,10 +41,10 @@ export function Conversar() {
     setBusy(true);
     setInput("");
     setFlash(null);
-    setPendingUser(t); // mostra sua mensagem na hora
+    setPendingUser(t);
     try {
       const r = await api.aiMessage(t);
-      await pull(); // traz as mensagens persistidas
+      await pull();
       setSuggestion(r.suggestion || null);
     } catch {
       setFlash("Não foi possível falar com o assistente agora.");
@@ -62,58 +64,56 @@ export function Conversar() {
 
   return (
     <>
-      <div className="hero">
-        <h1 className="scr-title">Conversar com Moments</h1>
-        <p className="scr-sub">Respostas vêm só das suas informações. Nada é alterado sem você confirmar.</p>
-      </div>
-
-      <div className="chat">
-        {messages.length === 0 && (
-          <div className="msg bot">Oi, {s.user?.name?.split(" ")[0]}! Pergunte sobre seus compromissos, tarefas, metas ou economias — ou peça para eu anotar algo.</div>
-        )}
-        {messages.map((m) => (
-          <div className={"msg " + (m.role === "user" ? "me" : "bot")} key={m.id}>{m.text}</div>
-        ))}
-        {busy && pendingUser && <div className="msg me">{pendingUser}</div>}
-        {busy && (
-          <div className="msg bot typing" aria-label="digitando">
-            <span /><span /><span />
-          </div>
-        )}
-      </div>
-
-      {suggestion && (
-        <div className="sugg">
-          <div className="s-top">Sugestão — confirme para registrar</div>
-          <div className="s-title">{suggestion.label}</div>
-          <div className="sugg-actions">
-            <button className="ok" onClick={confirm}>Confirmar</button>
-            <button className="no" onClick={() => setSuggestion(null)}>Descartar</button>
-          </div>
+      <div className="chat-scroll" ref={scrollRef}>
+        <div className="chat">
+          {messages.length === 0 && (
+            <div className="msg bot">Oi, {s.user?.name?.split(" ")[0]}! Pergunte sobre seus compromissos, tarefas, metas ou economias — ou peça para eu anotar algo. Nada é alterado sem você confirmar.</div>
+          )}
+          {messages.map((m) => (
+            <div className={"msg " + (m.role === "user" ? "me" : "bot")} key={m.id}>{m.text}</div>
+          ))}
+          {busy && pendingUser && <div className="msg me">{pendingUser}</div>}
+          {busy && (
+            <div className="msg bot typing" aria-label="digitando">
+              <span /><span /><span />
+            </div>
+          )}
         </div>
-      )}
+      </div>
 
-      {(flash || rec.error) && <div className="flash">{flash || rec.error}</div>}
-      {rec.state === "recording" && <div className="rec-hint">● Gravando… toque no microfone para parar.</div>}
-      {rec.state === "transcribing" && <div className="rec-hint">Transcrevendo seu áudio…</div>}
-
-      <form className="composer" onSubmit={(e) => { e.preventDefault(); send(); }}>
-        {rec.supported && (
-          <button
-            type="button"
-            className={"mic" + (rec.state === "recording" ? " on" : "")}
-            onClick={() => (rec.state === "recording" ? rec.stop() : rec.start())}
-            disabled={busy || rec.state === "transcribing"}
-            title="Falar"
-            aria-label={rec.state === "recording" ? "Parar gravação" : "Gravar voz"}
-          >
-            {rec.state === "recording" ? <StopIcon /> : rec.state === "transcribing" ? <span className="mic-spin" /> : <MicIcon />}
-          </button>
+      <div className="chat-bottom">
+        {suggestion && (
+          <div className="sugg">
+            <div className="s-top">Sugestão — confirme para registrar</div>
+            <div className="s-title">{suggestion.label}</div>
+            <div className="sugg-actions">
+              <button className="ok" onClick={confirm}>Confirmar</button>
+              <button className="no" onClick={() => setSuggestion(null)}>Descartar</button>
+            </div>
+          </div>
         )}
-        <input placeholder="Pergunte ou peça algo…" value={input} onChange={(e) => setInput(e.target.value)} />
-        <button type="submit" disabled={busy}>{busy ? "…" : "Enviar"}</button>
-      </form>
-      <div ref={endRef} aria-hidden />
+
+        {(flash || rec.error) && <div className="flash">{flash || rec.error}</div>}
+        {rec.state === "recording" && <div className="rec-hint">● Gravando… toque no microfone para parar.</div>}
+        {rec.state === "transcribing" && <div className="rec-hint">Transcrevendo seu áudio…</div>}
+
+        <form className="composer" onSubmit={(e) => { e.preventDefault(); send(); }}>
+          {rec.supported && (
+            <button
+              type="button"
+              className={"mic" + (rec.state === "recording" ? " on" : "")}
+              onClick={() => (rec.state === "recording" ? rec.stop() : rec.start())}
+              disabled={busy || rec.state === "transcribing"}
+              title="Falar"
+              aria-label={rec.state === "recording" ? "Parar gravação" : "Gravar voz"}
+            >
+              {rec.state === "recording" ? <StopIcon /> : rec.state === "transcribing" ? <span className="mic-spin" /> : <MicIcon />}
+            </button>
+          )}
+          <input placeholder="Pergunte ou peça algo…" value={input} onChange={(e) => setInput(e.target.value)} />
+          <button type="submit" disabled={busy}>{busy ? "…" : "Enviar"}</button>
+        </form>
+      </div>
     </>
   );
 }

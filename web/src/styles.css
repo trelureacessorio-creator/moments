@@ -140,7 +140,12 @@ nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; background: va
 /* banner de erro de sincronização */
 .sync-err { background: var(--crit-soft); color: var(--crit); font-size: 12.5px; text-align: center; padding: 7px 12px; }
 
-/* conversar (chat) */
+/* conversar (chat) — layout tipo WhatsApp: cabeçalho e caixa fixos, só as mensagens rolam */
+body.chat-mode main { padding: 0; height: calc(100vh - 55px - 61px); height: calc(100dvh - 55px - 61px); display: flex; flex-direction: column; overflow: hidden; }
+.chat-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 14px 16px 8px; -webkit-overflow-scrolling: touch; }
+.chat-bottom { flex: none; padding: 8px 16px calc(8px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); background: var(--surface); }
+.chat-bottom .composer { position: static; margin-top: 0; }
+.chat-bottom .sugg, .chat-bottom .flash, .chat-bottom .rec-hint { margin-bottom: 8px; margin-top: 0; }
 .chat { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
 .msg { max-width: 85%; padding: 10px 13px; border-radius: 16px; font-size: 14px; line-height: 1.45; white-space: pre-wrap; }
 .msg.me { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 5px; }
