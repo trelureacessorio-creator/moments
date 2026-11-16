@@ -119,6 +119,41 @@ export async function generateDueNotifications(now: Date = new Date(), onlyUserI
           () => goalMessage(g), { entityType: "goals", entityId: g.id });
       }
     }
+
+    // Lembretes de hora: 5 minutos antes e quando começa (compromissos e tarefas de hoje).
+    const toMin = (t: string) => { const [h, m] = t.split(":").map(Number); return (h || 0) * 60 + (m || 0); };
+    const nowMin = toMin(time);
+
+    const appts = await prisma.appointment.findMany({
+      where: { ownerId: u.id, deletedAt: null, date, status: { not: "done" } },
+    });
+    for (const a of appts) {
+      if (!a.time) continue;
+      const diff = toMin(a.time) - nowMin;
+      const place = a.place ? ` — ${a.place}` : "";
+      if (diff > 0 && diff <= 5) {
+        created += await ensure(u.id, "appt_soon", `${u.id}:apptsoon:${a.id}:${date}`, now,
+          () => `Faltam ${diff} min para "${a.title}" às ${a.time}${place}.`, { entityType: "appointments", entityId: a.id });
+      } else if (diff <= 0 && diff >= -10) {
+        created += await ensure(u.id, "appt_now", `${u.id}:apptnow:${a.id}:${date}`, now,
+          () => `Começou agora: "${a.title}" (${a.time})${place}.`, { entityType: "appointments", entityId: a.id });
+      }
+    }
+
+    const tasks = await prisma.task.findMany({
+      where: { ownerId: u.id, deletedAt: null, done: false, date },
+    });
+    for (const t of tasks) {
+      if (!t.time) continue;
+      const diff = toMin(t.time) - nowMin;
+      if (diff > 0 && diff <= 5) {
+        created += await ensure(u.id, "task_soon", `${u.id}:tasksoon:${t.id}:${date}`, now,
+          () => `Faltam ${diff} min para a tarefa "${t.text}" (${t.time}).`, { entityType: "tasks", entityId: t.id });
+      } else if (diff <= 0 && diff >= -10) {
+        created += await ensure(u.id, "task_now", `${u.id}:tasknow:${t.id}:${date}`, now,
+          () => `Hora da tarefa: "${t.text}" (${t.time}).`, { entityType: "tasks", entityId: t.id });
+      }
+    }
   }
   return created;
 }

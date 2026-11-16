@@ -8,6 +8,10 @@ const META: Record<string, { ic: string; soft: string }> = {
   sunday: { ic: "📅", soft: "var(--surface-2)" },
   goal_alert: { ic: "◈", soft: "var(--accent-soft)" },
   shared_change: { ic: "⇄", soft: "var(--surface-2)" },
+  appt_soon: { ic: "⏰", soft: "var(--warm-soft)" },
+  appt_now: { ic: "🔔", soft: "var(--accent-soft)" },
+  task_soon: { ic: "⏰", soft: "var(--warm-soft)" },
+  task_now: { ic: "✓", soft: "var(--good-soft)" },
 };
 
 function whenLabel(n: any) {
