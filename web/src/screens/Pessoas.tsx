@@ -1,6 +1,10 @@
 import { useState } from "react";
-import { useStore, list, createRecord } from "../lib/store";
+import { useStore, list, createRecord, deleteRecord } from "../lib/store";
 import { TODAY, sod } from "../lib/dates";
+
+function del(collection: string, id: string) {
+  if (confirm("Excluir este item? Esta ação não pode ser desfeita.")) deleteRecord(collection, id);
+}
 
 const MOL = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 
@@ -49,6 +53,7 @@ export function Pessoas({ onBack }: { onBack: () => void }) {
                   <span className="avatar">{(p.name || "?").charAt(0).toUpperCase()}</span>
                   <div className="r-main"><div className="r-title">{p.name}</div>{p.relation && <div className="r-sub">{p.relation}</div>}</div>
                   {days != null && days <= 30 && <span className="streak" style={{ color: "var(--accent)" }}>{days}d</span>}
+                  <button className="chip-btn" onClick={() => del("people", p.id)}>excluir</button>
                 </div>
                 {(p.birthday || p.phone) && (
                   <div className="plines">

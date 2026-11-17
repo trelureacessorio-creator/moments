@@ -1,6 +1,10 @@
 import { useState } from "react";
-import { useStore, list, createRecord, updateRecord } from "../lib/store";
+import { useStore, list, createRecord, updateRecord, deleteRecord } from "../lib/store";
 import { TODAY, pIso, iso, isoToday, fmtRel, cap } from "../lib/dates";
+
+function del(collection: string, id: string) {
+  if (confirm("Excluir este item? Esta ação não pode ser desfeita.")) deleteRecord(collection, id);
+}
 
 const money = (n: number) => "R$ " + Number(n).toLocaleString("pt-BR");
 function daysLeft(deadline: string) {
@@ -48,7 +52,7 @@ export function Metas({ onBack }: { onBack: () => void }) {
               <div className="goal tap" key={g.id} onClick={() => setSel(g.id)}>
                 <div className="goal-top"><span className="goal-name">{g.name}</span><span className={"goal-dl" + (n >= 0 && n <= 10 ? " soon" : "")}>{n < 0 ? "prazo passou" : n === 0 ? "vence hoje" : `faltam ${n} dias`}</span></div>
                 <div className="track"><div className="fill" style={{ width: pct(g) + "%" }} /></div>
-                <div className="goal-foot"><span className="goal-nums">{g.type === "money" ? <><b>{money(g.currentValue)}</b> de {money(g.targetValue)}</> : <><b>{g.currentValue}</b> de {g.targetValue} {g.unit}</>} · {pct(g)}%</span><span className="upd">Ver meta →</span></div>
+                <div className="goal-foot"><span className="goal-nums">{g.type === "money" ? <><b>{money(g.currentValue)}</b> de {money(g.targetValue)}</> : <><b>{g.currentValue}</b> de {g.targetValue} {g.unit}</>} · {pct(g)}%</span><span style={{ display: "flex", gap: 10, alignItems: "center" }}><button className="chip-btn" onClick={(e) => { e.stopPropagation(); del("goals", g.id); }}>excluir</button><span className="upd">Ver →</span></span></div>
               </div>
             );
           })}
@@ -119,6 +123,7 @@ function Detail({ g, data, onBack }: { g: any; data: any; onBack: () => void }) 
             <div className="row" key={st.id}>
               <button className={"check" + (st.done ? " on" : "")} aria-label="Concluir" onClick={() => updateRecord("goalSteps", st.id, { done: !st.done })}>✓</button>
               <div className="r-main"><div className="r-title" style={{ textDecoration: st.done ? "line-through" : "none", color: st.done ? "var(--faint)" : "var(--fg)" }}>{st.text}</div></div>
+              <button className="chip-btn" onClick={() => del("goalSteps", st.id)}>excluir</button>
             </div>
           ))}
           <div className="addrow"><input placeholder="Nova etapa…" value={stepText} onChange={(e) => setStepText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") addStep(); }} /><button onClick={addStep} aria-label="Adicionar">+</button></div>
@@ -136,6 +141,13 @@ function Detail({ g, data, onBack }: { g: any; data: any; onBack: () => void }) 
             );
           })}
         </div>
+      </section>
+
+      <section>
+        <button className="btn ghost" style={{ width: "100%", color: "var(--crit)" }}
+          onClick={() => { if (confirm(`Excluir a meta "${g.name}"? Esta ação não pode ser desfeita.`)) { deleteRecord("goals", g.id); onBack(); } }}>
+          Excluir meta
+        </button>
       </section>
     </>
   );

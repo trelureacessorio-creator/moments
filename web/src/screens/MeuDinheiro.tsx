@@ -1,6 +1,10 @@
 import { useState } from "react";
-import { useStore, list, createRecord } from "../lib/store";
+import { useStore, list, createRecord, deleteRecord } from "../lib/store";
 import { isoToday, fmtRel, cap, pIso } from "../lib/dates";
+
+function del(collection: string, id: string) {
+  if (confirm("Excluir este item? Esta ação não pode ser desfeita.")) deleteRecord(collection, id);
+}
 
 const money = (n: number) => "R$ " + Number(n).toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 
@@ -73,7 +77,7 @@ export function MeuDinheiro({ onBack }: { onBack: () => void }) {
             const col = f.type === "despesa" ? "var(--crit)" : f.type === "receita" ? "var(--good)" : "var(--accent)";
             const lab = f.type === "receita" ? "Receita" : f.type === "despesa" ? "Despesa" : "Economia";
             return (
-              <div className="row" key={f.id}><div className="r-main"><div className="r-title">{f.category || lab}</div><div className="r-sub">{lab} · {cap(fmtRel(f.date))}</div></div><span style={{ fontWeight: 600, fontVariantNumeric: "tabular-nums", color: col }}>{sign}{money(f.amount)}</span></div>
+              <div className="row" key={f.id}><div className="r-main"><div className="r-title">{f.category || lab}</div><div className="r-sub">{lab} · {cap(fmtRel(f.date))}</div></div><span style={{ fontWeight: 600, fontVariantNumeric: "tabular-nums", color: col }}>{sign}{money(f.amount)}</span><button className="chip-btn" onClick={() => del("financeNotes", f.id)}>excluir</button></div>
             );
           })}
           <div className="addrow">

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useStore, list, createRecord } from "../lib/store";
+import { useStore, list, createRecord, deleteRecord } from "../lib/store";
 import { api } from "../lib/api";
 import { useRecorder } from "../lib/useRecorder";
 import { MicIcon, StopIcon } from "../lib/icons";
@@ -33,7 +33,10 @@ export function Diario() {
               <div className="diary-item" key={e.id}>
                 <div className="di-top"><span className="di-title">{e.title}</span><span className="di-date">{cap(fmtRel(e.date))} · {e.time}</span></div>
                 {e.summary && <div className="di-sum">{e.summary}</div>}
-                {e.mood && <div className="di-tags"><span className="tag mood">{e.mood}</span></div>}
+                <div className="di-tags">
+                  {e.mood && <span className="tag mood">{e.mood}</span>}
+                  <button className="chip-btn" style={{ marginLeft: "auto" }} onClick={() => { if (confirm("Excluir este relato? Esta ação não pode ser desfeita.")) deleteRecord("diary", e.id); }}>excluir</button>
+                </div>
               </div>
             ))
           )}

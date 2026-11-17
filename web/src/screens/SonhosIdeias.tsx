@@ -1,6 +1,10 @@
 import { useState } from "react";
-import { useStore, list, createRecord } from "../lib/store";
+import { useStore, list, createRecord, deleteRecord } from "../lib/store";
 import { isoToday, fmtRel, cap, TODAY, iso, addDays } from "../lib/dates";
+
+function del(collection: string, id: string) {
+  if (confirm("Excluir este item? Esta ação não pode ser desfeita.")) deleteRecord(collection, id);
+}
 
 export function SonhosIdeias({ onBack }: { onBack: () => void }) {
   const s = useStore();
@@ -44,7 +48,7 @@ export function SonhosIdeias({ onBack }: { onBack: () => void }) {
               <div className="habit" key={d._c + d.id}>
                 <div className="habit-top">
                   <div><div className="habit-name">{d.title}</div><div className="habit-freq">{m.lab} · {cap(fmtRel(d.date))}</div></div>
-                  <span className="tag">{m.ic}</span>
+                  <span style={{ display: "flex", gap: 8, alignItems: "center" }}><span className="tag">{m.ic}</span><button className="chip-btn" onClick={() => del(d._c, d.id)}>excluir</button></span>
                 </div>
                 {d.description && <div className="di-sum">{d.description}</div>}
                 {d.type !== "sono" && <button className="hmark" style={{ marginTop: 10 }} onClick={() => toGoal(d)}>Transformar em meta</button>}

@@ -27,6 +27,7 @@ export function ApptEditor({ appt, onClose }: { appt: any; onClose: () => void }
   }
 
   async function del() {
+    if (!confirm("Excluir este compromisso? Esta ação não pode ser desfeita.")) return;
     setBusy(true);
     await deleteRecord("appointments", appt.id);
     setBusy(false);
